@@ -546,7 +546,7 @@ input::placeholder{color:var(--t3);}
         <!-- Chat input -->
         <div id="chat-input-section" class="footer-col">
           <div class="chat-input-row">
-            <input type="text" id="chat-input" placeholder="Build a connector for GitHub, Salesforce, or any REST API..." onkeydown="if(event.key==='Enter')sendChat()" style="flex:1;">
+            <input type="text" id="chat-input" placeholder="Build a connector for Salesforce, HubSpot, or any REST API..." onkeydown="if(event.key==='Enter')sendChat()" style="flex:1;">
             <button class="btn btn-primary" onclick="sendChat()" style="padding:0 13px;flex-shrink:0;">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg>
             </button>
@@ -753,10 +753,8 @@ input::placeholder{color:var(--t3);}
 // ─────────────────────────────────────────
 const CONNECTORS = {
   calendly:   {display:'Calendly',   icon:'📅', auth:'Bearer token',   desc:'Scheduling & calendar events',       needsAuth:true},
-  github:     {display:'GitHub',     icon:'🐙', auth:'No auth needed', desc:'Repos, releases & contributors',     needsAuth:false},
   salesforce: {display:'Salesforce', icon:'☁️', auth:'OAuth 2.0',      desc:'CRM contacts & opportunities',       needsAuth:true},
   hubspot:    {display:'HubSpot',    icon:'🟠', auth:'API key',        desc:'Marketing & sales CRM',              needsAuth:true},
-  slack:      {display:'Slack',      icon:'💬', auth:'OAuth 2.0',      desc:'Channels, messages & users',         needsAuth:true},
   stripe:     {display:'Stripe',     icon:'💳', auth:'API key',        desc:'Payments, customers & invoices',     needsAuth:true},
 };
 const STEPS = [
@@ -765,7 +763,7 @@ const STEPS = [
   {title:'4-Layer Validation',      sub:'Schema · Secret scan · Live probe · Contract test'},
   {title:'Human Review',            sub:'Review and approve before registering'},
 ];
-const ICONS = {calendly:'📅',github:'🐙',salesforce:'☁️',hubspot:'🟠',slack:'💬',stripe:'💳'};
+const ICONS = {calendly:'📅',salesforce:'☁️',hubspot:'🟠',stripe:'💳'};
 
 // ─────────────────────────────────────────
 // STATE
@@ -1089,7 +1087,7 @@ async function sendChat() {
       await handleConnector(k, true);
     } else {
       addMsg('bot',
-        `I can help you build connectors for <strong>Calendly, GitHub, Salesforce, HubSpot, Slack</strong> and <strong>Stripe</strong>, or any REST API you describe.<br>` +
+        `I can help you build connectors for <strong>Calendly, Salesforce, HubSpot</strong> and <strong>Stripe</strong>, or any REST API you describe.<br>` +
         `Try: <em>"build a connector for Salesforce"</em>`);
     }
   }
