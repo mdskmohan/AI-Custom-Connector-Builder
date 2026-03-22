@@ -769,16 +769,15 @@ function getLogoUrl(baseUrl) {
   if (!baseUrl) return null;
   try {
     const hostname = new URL(baseUrl).hostname;
-    // Strip common API subdomains (api., app., dev.) to get root domain for logo lookup
     const parts = hostname.split('.');
     const root = parts.length > 2 ? parts.slice(-2).join('.') : hostname;
-    return `https://logo.clearbit.com/${root}`;
+    return `https://www.google.com/s2/favicons?domain=${root}&sz=128`;
   } catch { return null; }
 }
 
 function connIconHtml(logoUrl, fallback, imgSize=26) {
   if (!logoUrl) return `<span>${fallback}</span>`;
-  return `<img src="${logoUrl}" width="${imgSize}" height="${imgSize}" style="border-radius:5px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display=''" alt=""><span style="display:none;">${fallback}</span>`;
+  return `<img src="${logoUrl}" width="${imgSize}" height="${imgSize}" style="border-radius:4px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display=''" alt=""><span style="display:none;">${fallback}</span>`;
 }
 
 // ─────────────────────────────────────────
