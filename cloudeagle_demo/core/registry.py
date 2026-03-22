@@ -105,9 +105,11 @@ class ConnectorRegistry:
             return True
         return False
 
-    def increment_sync_count(self, name: str):
+    def increment_sync_count(self, name: str, records: int = 0):
         if name in self._registry["connectors"]:
             self._registry["connectors"][name]["total_syncs"] += 1
+            self._registry["connectors"][name].setdefault("total_records", 0)
+            self._registry["connectors"][name]["total_records"] += records
             self._save()
 
     def get_current_manifest(self, name: str) -> Optional[dict]:

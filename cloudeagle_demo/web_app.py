@@ -516,7 +516,7 @@ def run_sync(name: str, req: SyncReq):
             results = rt.run(name, req.mode)
             total   = sum(r.records_synced for r in results)
             q.put({"type": "done", "total": total, "streams": len(results)})
-            reg.increment_sync_count(name)
+            reg.increment_sync_count(name, records=total)
         except Exception as e:
             q.put({"type": "error", "msg": str(e)})
         finally:
