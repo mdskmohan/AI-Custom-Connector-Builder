@@ -93,7 +93,7 @@ body{display:flex;font-family:'Inter',system-ui,sans-serif;background:var(--bg);
 /* ── Pages ── */
 .page{flex:1;overflow:hidden;display:none;}
 .page.active{display:flex;flex-direction:column;}
-#page-marketplace.active,#page-observability.active,#page-edit.active{display:block;overflow-y:auto;}
+#page-connectors.active,#page-observability.active,#page-edit.active{display:block;overflow-y:auto;}
 
 /* ── Buttons ── */
 .btn{display:inline-flex;align-items:center;gap:5px;padding:0 13px;height:32px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:background .1s,opacity .1s;white-space:nowrap;flex-shrink:0;font-family:inherit;}
@@ -250,7 +250,7 @@ input::placeholder{color:var(--t3);}
 .explainer-title{font-size:13px;font-weight:600;color:var(--t1);}
 .explainer-body{font-size:12px;color:var(--t2);margin-top:3px;line-height:1.55;}
 
-/* ── Marketplace list ── */
+/* ── Connectors list ── */
 .mp-metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
 .mp-metric-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;border-left-width:4px;border-left-style:solid;}
 .mp-metric-card strong{font-size:26px;font-weight:700;color:var(--t1);display:block;letter-spacing:-.6px;line-height:1;margin-bottom:4px;}
@@ -274,7 +274,7 @@ input::placeholder{color:var(--t3);}
 .mp-delete{opacity:0;transition:opacity .15s;color:var(--t3);}
 .mp-delete:hover{color:var(--red) !important;}
 
-/* ── Marketplace sections ── */
+/* ── Connectors sections ── */
 .mp-section{margin-bottom:40px;}
 .mp-section-hd{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
 .mp-section-label{font-size:13px;font-weight:700;color:var(--t1);letter-spacing:-.1px;}
@@ -302,7 +302,7 @@ input::placeholder{color:var(--t3);}
 .mp-ctile-stat strong{font-size:15px;font-weight:700;color:var(--t1);display:block;letter-spacing:-.3px;line-height:1.2;margin-bottom:1px;text-transform:none;}
 .mp-ctile-actions{display:flex;align-items:center;gap:5px;}
 
-/* ── Marketplace filter bar ── */
+/* ── Connectors filter bar ── */
 .mp-filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
 .mp-filter-bar input[type="text"]{flex:1;max-width:280px;height:34px;}
 .mp-filter-bar select{width:auto;height:34px;padding:0 28px 0 10px;font-size:12px;cursor:pointer;}
@@ -452,9 +452,9 @@ input::placeholder{color:var(--t3);}
 
   <nav class="sidebar-nav">
     <div class="nav-section">Connectors</div>
-    <button class="nav-item active" data-page="marketplace" onclick="navigate('marketplace')" title="Marketplace">
+    <button class="nav-item active" data-page="connectors" onclick="navigate('connectors')" title="Connectors">
       <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
-      <span class="nav-label">Marketplace</span>
+      <span class="nav-label">Connectors</span>
     </button>
     <div class="nav-section">Monitor</div>
     <button class="nav-item" data-page="observability" onclick="navigate('observability')" title="Observability">
@@ -473,7 +473,7 @@ input::placeholder{color:var(--t3);}
 
   <!-- Settings & pipeline button (no topbar) -->
   <div id="topbar" style="display:none;">
-    <div class="breadcrumb" id="breadcrumb"><span class="cur">Marketplace</span></div>
+    <div class="breadcrumb" id="breadcrumb"><span class="cur">Connectors</span></div>
     <div class="topbar-end">
       <button id="artifacts-btn" class="btn btn-secondary btn-sm" onclick="toggleArtifacts()" style="display:none;gap:6px;">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2l1.4 3.6L13 7l-3.6 1.4L8 12l-1.4-3.6L3 7l3.6-1.4L8 2z"/></svg>
@@ -626,7 +626,7 @@ input::placeholder{color:var(--t3);}
   </div>
 
   <!-- ══════════════ MARKETPLACE ══════════════ -->
-  <div id="page-marketplace" class="page" style="overflow-y:auto;">
+  <div id="page-connectors" class="page" style="overflow-y:auto;">
     <div style="padding:24px 28px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:15px;font-weight:700;letter-spacing:-.2px;color:var(--t1);">Connectors</div>
@@ -643,8 +643,8 @@ input::placeholder{color:var(--t3);}
       <div class="empty" style="padding-top:80px;">
         <div class="empty-icon">⚙</div>
         <div class="empty-title">No connector selected</div>
-        <div class="empty-body">Open a connector from the Marketplace and click Configure.</div>
-        <button class="btn btn-primary" style="margin-top:16px;" onclick="navigate('marketplace')">Go to Marketplace</button>
+        <div class="empty-body">Open a connector from the Connectors and click Configure.</div>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="navigate('connectors')">Go to Connectors</button>
       </div>
     </div>
   </div>
@@ -831,11 +831,11 @@ function navigate(page, params={}) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.page===page));
   document.getElementById('page-'+page).classList.add('active');
-  const titles = {builder:'AI Builder', marketplace:'Marketplace', edit:'Configure', observability:'Observability'};
+  const titles = {builder:'AI Builder', connectors:'Connectors', edit:'Configure', observability:'Observability'};
   setBreadcrumb(titles[page] || page);
   const artifactsBtn = document.getElementById('artifacts-btn');
   if (artifactsBtn) artifactsBtn.style.display = (page==='builder' && S.stage!=='idle') ? 'flex' : 'none';
-  if (page==='marketplace')    loadMarketplace();
+  if (page==='connectors')    loadConnectors();
   if (page==='observability')  loadObservability();
   if (page==='edit' && params.connector) openEdit(params.connector);
 }
@@ -1569,7 +1569,7 @@ async function approveBuild() {
     return;
   }
 
-  S.stepStatus[3] = 'done'; S.stepSummary[3] = 'Approved — saved to Marketplace';
+  S.stepStatus[3] = 'done'; S.stepSummary[3] = 'Approved — saved to Connectors';
   refreshStep(3);
   const pct = document.getElementById('pipeline-pct');
   if (pct) pct.textContent = '100%';
@@ -1580,11 +1580,11 @@ async function approveBuild() {
 
   addMsg('bot',
     `<strong>${esc(S.connector)} v${esc(version)}</strong> registered successfully.<br><br>` +
-    `<a href="#" onclick="navigate('marketplace');return false;" style="color:var(--blue);font-weight:600;">View in Marketplace →</a>`);
+    `<a href="#" onclick="navigate('connectors');return false;" style="color:var(--blue);font-weight:600;">View in Connectors →</a>`);
 
   S.stage = 'done';
-  // Pre-fetch fresh marketplace data so it's ready when user navigates there
-  await loadMarketplace().catch(()=>{});
+  // Pre-fetch fresh connectors data so it's ready when user navigates there
+  await loadConnectors().catch(()=>{});
   updateSidebarCount();
   toast(`${S.connector} registered`);
 }
@@ -1606,11 +1606,11 @@ function calcManifestAccuracy(m) {
   return Math.min(100, score);
 }
 
-async function loadMarketplace() {
+async function loadConnectors() {
   const data = await api('/api/connectors');
   S._mpConnectors = data.connectors;
   const s = data.stats;
-  // Only update DOM elements that exist (this fn may be called from non-marketplace pages)
+  // Only update DOM elements that exist (this fn may be called from non-connectors pages)
   const metricsEl = document.getElementById('reg-metrics');
   if (metricsEl) {
     const totalSyncs   = (S._mpConnectors||[]).reduce((a,c)=>a+(c.total_syncs||0),0);
@@ -1639,7 +1639,7 @@ async function loadMarketplace() {
         <div class="mp-metric-sub">Total records ingested</div>
       </div>
     </div>`;
-    renderMarketplaceSections();
+    renderConnectorsSections();
   }
   const cntEl = document.getElementById('conn-count-sidebar');
   if (cntEl) cntEl.textContent = s.total;
@@ -1651,10 +1651,10 @@ function setMpFilter(type, status) {
   // Show/hide status dropdown based on type selection
   const statusSel = document.getElementById('mp-status-sel');
   if (statusSel) statusSel.style.display = S._mpType === 'all' ? 'none' : 'inline-block';
-  renderMarketplaceSections();
+  renderConnectorsSections();
 }
 
-function renderMarketplaceSections() {
+function renderConnectorsSections() {
   const connectors = S._mpConnectors || [];
   const el = document.getElementById('reg-cards');
   const search    = (S._mpSearch || '').toLowerCase();
@@ -1744,7 +1744,7 @@ function renderMarketplaceSections() {
   // Filter bar HTML
   const filterBar = `<div class="mp-filter-bar">
     <input type="text" placeholder="Search connectors…" value="${ea(S._mpSearch||'')}"
-      oninput="S._mpSearch=this.value;renderMarketplaceSections()">
+      oninput="S._mpSearch=this.value;renderConnectorsSections()">
     <select onchange="setMpFilter(this.value, undefined)">
       <option value="all"     ${(S._mpType||'all')==='all'    ?'selected':''}>All Types</option>
       <option value="inbuilt" ${S._mpType==='inbuilt'         ?'selected':''}>In-built</option>
@@ -1782,7 +1782,7 @@ function renderMarketplaceSections() {
 async function promoteConn(name) {
   await api(`/api/connectors/${encodeURIComponent(name)}/promote`, {method:'POST'});
   toast(`${name} published to production`);
-  loadMarketplace();
+  loadConnectors();
   const c = await api(`/api/connectors/${encodeURIComponent(name)}`);
   const vi = (c.versions||[{}]).slice(-1)[0];
   renderEditPage(c, vi);
@@ -1791,7 +1791,7 @@ async function promoteConn(name) {
 async function unpublishConn(name) {
   await api(`/api/connectors/${encodeURIComponent(name)}/demote`, {method:'POST'});
   toast(`${name} moved back to Beta`);
-  loadMarketplace();
+  loadConnectors();
   const c = await api(`/api/connectors/${encodeURIComponent(name)}`);
   const vi = (c.versions||[{}]).slice(-1)[0];
   renderEditPage(c, vi);
@@ -1803,8 +1803,8 @@ function deleteConn(name) {
     closeDeleteModal();
     await api(`/api/connectors/${encodeURIComponent(name)}`, {method:'DELETE'});
     toast(`${name} deleted`);
-    navigate('marketplace');
-    loadMarketplace();
+    navigate('connectors');
+    loadConnectors();
     updateSidebarCount();
   };
   document.getElementById('delete-modal').classList.add('open');
@@ -1846,11 +1846,11 @@ async function openEditTab(name, tab) {
 }
 
 async function openEdit(name) {
-  // Show edit page, keep Marketplace highlighted in sidebar
+  // Show edit page, keep Connectors highlighted in sidebar
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-edit').classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.page==='marketplace'));
-  setBreadcrumb('Marketplace', name);
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.page==='connectors'));
+  setBreadcrumb('Connectors', name);
 
   const conn = await api(`/api/connectors/${encodeURIComponent(name)}`);
   S.editConn = name;
@@ -1930,9 +1930,9 @@ function renderEditPage(conn, vi) {
   <div class="cfg-header">
     <div class="cfg-top">
       <div style="display:flex;align-items:center;gap:12px;">
-        <button class="btn btn-ghost btn-sm" onclick="navigate('marketplace')" style="padding:0 8px;gap:4px;flex-shrink:0;">
+        <button class="btn btn-ghost btn-sm" onclick="navigate('connectors')" style="padding:0 8px;gap:4px;flex-shrink:0;">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><polyline points="8,2 4,6 8,10"/></svg>
-          Marketplace
+          Connectors
         </button>
         <span style="color:var(--border-md);">/</span>
         <div class="cfg-conn-info">
@@ -3524,7 +3524,7 @@ async function updateSidebarCount() {
 // INIT
 // ─────────────────────────────────────────
 buildConnGrid();
-navigate('marketplace');
+navigate('connectors');
 </script>
 </body>
 </html>
