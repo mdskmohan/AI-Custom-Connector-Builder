@@ -394,6 +394,7 @@ class SyncRuntime:
                     if r.status_code != 200:
                         break
                     records = _apply_selector(r.json(), stream.get("record_selector", "$[*]"))
+                    records = [r if isinstance(r, dict) else {"value": r} for r in records]
                     link = r.headers.get("Link", "")
                     match = re.search(r'<([^>]+)>;\s*rel="next"', link)
                     next_url = match.group(1) if match else None
@@ -412,6 +413,9 @@ class SyncRuntime:
             if not records:
                 self.log(f"No records on page {page_num} — stream complete", "info")
                 break
+
+            # Normalize non-dict records (e.g. float/string values from simple APIs)
+            records = [r if isinstance(r, dict) else {"value": r} for r in records]
 
             pages += 1
             total_records += len(records)

@@ -316,14 +316,14 @@ input::placeholder{color:var(--t3);}
 .mp-add-tile-sub{font-size:11px;color:var(--t3);line-height:1.4;}
 
 /* ── Configure page tabs ── */
-.cfg-header{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
+.cfg-header{background:var(--surface);position:sticky;top:0;z-index:10;}
 .cfg-top{padding:16px 28px 12px;display:flex;align-items:center;justify-content:space-between;}
 .cfg-conn-info{display:flex;align-items:center;gap:13px;}
 .cfg-icon{width:40px;height:40px;border-radius:10px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
 .cfg-name{font-size:16px;font-weight:700;color:var(--t1);}
 .cfg-meta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap;}
-.cfg-tabs{display:flex;padding:0 28px;}
-.cfg-tab{padding:9px 16px;font-size:13px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px;white-space:nowrap;transition:color .1s,border-color .1s;line-height:1.4;}
+.cfg-tabs{display:flex;padding:0 28px;border-bottom:1px solid var(--border);}
+.cfg-tab{padding:9px 16px;font-size:13px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;cursor:pointer;position:relative;top:1px;white-space:nowrap;transition:color .1s,border-color .1s;line-height:1.4;background:var(--surface);}
 .cfg-tab:hover{color:var(--t1);}
 .cfg-tab.active{color:var(--t1);border-bottom-color:var(--t1);font-weight:600;}
 .cfg-body{padding:24px 28px 40px;}
@@ -362,9 +362,9 @@ input::placeholder{color:var(--t3);}
 .activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 
 /* ── Sync inner tabs ── */
-.sync-inner-tab{background:none;border:none;border-bottom:2px solid transparent;padding:10px 14px;font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;transition:color .15s,box-shadow .15s;}
+.sync-inner-tab{background:var(--bg);border:none;border-bottom:2px solid transparent;padding:10px 14px;font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;position:relative;top:1px;transition:color .15s,border-color .15s;}
 .sync-inner-tab:hover{color:var(--t2);}
-.sync-inner-tab.active{color:var(--blue);box-shadow:inset 0 -2px 0 var(--blue);font-weight:600;}
+.sync-inner-tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600;}
 
 /* ── Notification cards ── */
 .notif-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
@@ -401,7 +401,7 @@ input::placeholder{color:var(--t3);}
 
 /* ── Artifacts panel tabs ── */
 .ap-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 8px;}
-.ap-tab{padding:8px 10px;font-size:12px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px;transition:color .1s,border-color .1s;white-space:nowrap;}
+.ap-tab{padding:8px 10px;font-size:12px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;cursor:pointer;position:relative;top:1px;background:var(--surface);transition:color .1s,border-color .1s;white-space:nowrap;}
 .ap-tab:hover{color:var(--t1);}
 .ap-tab.active{color:var(--t1);border-bottom-color:var(--t1);font-weight:600;}
 
@@ -1899,7 +1899,7 @@ function renderEditPage(conn, vi) {
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             Delete
           </button>
-          <div class="stream-arrow" id="stream-arrow-${i}">▶</div>
+          <div class="stream-arrow" id="stream-arrow-${i}" style="display:none;">▶</div>
         </div>
       </div>
       <div class="stream-item-expand" id="stream-detail-${i}">
@@ -2382,11 +2382,14 @@ async function probeStream(i) {
 }
 
 function switchEditTab(tab) {
+  const pageEl = document.getElementById('page-edit');
+  const savedScroll = pageEl ? pageEl.scrollTop : 0;
   ['settings','sync','docs','manifest'].forEach(t => {
     document.getElementById(`etab-${t}`)?.classList.toggle('active', t===tab);
     const body = document.getElementById(`etab-${t}-body`);
     if (body) body.style.display = t===tab ? 'block' : 'none';
   });
+  if (pageEl) pageEl.scrollTop = savedScroll;
   if (tab==='sync')     { S._debugTab = S._debugTab||'preview'; loadSyncTabStatus(); }
   if (tab==='docs')     loadEditDocs();
   if (tab==='manifest') { S._manifestFmt = S._manifestFmt||'yaml'; renderManifestView(); }
