@@ -1,0 +1,3522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CloudEagle</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#F4F4F5; --surface:#fff;
+  --border:#E4E4E7; --border-md:#D4D4D8;
+  --t1:#18181B; --t2:#71717A; --t3:#A1A1AA;
+  --blue:#2563EB; --blue-bg:#EFF6FF; --blue-bd:#BFDBFE;
+  --green:#16A34A; --green-bg:#F0FDF4; --green-bd:#BBF7D0;
+  --amber:#D97706; --amber-bg:#FFFBEB; --amber-bd:#FDE68A;
+  --red:#DC2626; --red-bg:#FEF2F2; --red-bd:#FECACA;
+  --r:6px; --r-lg:10px;
+}
+html,body{height:100%;overflow:hidden;}
+body{display:flex;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+.mono{font-family:'JetBrains Mono',monospace;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border-md);border-radius:99px;}
+
+/* ── Sidebar ── */
+#sidebar{
+  width:220px;min-width:220px;background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:width .2s ease,min-width .2s ease;
+}
+#sidebar.collapsed{width:52px;min-width:52px;}
+.logo{
+  height:46px;min-height:46px;padding:0 16px;border-bottom:1px solid var(--border);
+  cursor:pointer;display:flex;align-items:center;
+  transition:padding .2s;user-select:none;flex-shrink:0;
+}
+.logo:hover{background:var(--bg);}
+.logo-mark{display:flex;align-items:center;gap:8px;}
+.logo-dot{
+  width:26px;height:26px;border-radius:50%;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.logo-dot svg{width:26px;height:26px;}
+.logo-text{font-size:14px;font-weight:700;color:var(--t1);letter-spacing:-.3px;white-space:nowrap;overflow:hidden;transition:opacity .15s;}
+.logo-sub{display:none;}
+#sidebar.collapsed .logo{padding:0;justify-content:center;}
+#sidebar.collapsed .logo-text{opacity:0;width:0;overflow:hidden;}
+#sidebar.collapsed .logo-mark{gap:0;}
+
+.sidebar-nav{flex:1;padding:6px 8px;overflow-y:auto;}
+.nav-section{
+  font-size:10px;font-weight:600;color:var(--t3);letter-spacing:.07em;
+  text-transform:uppercase;padding:14px 8px 5px;
+  overflow:hidden;white-space:nowrap;transition:opacity .15s;
+}
+#sidebar.collapsed .nav-section{opacity:0;height:0;padding:0;pointer-events:none;}
+.nav-item{
+  display:flex;align-items:center;gap:8px;padding:6px 8px;
+  border-radius:var(--r);font-size:13px;font-weight:500;color:var(--t2);
+  cursor:pointer;border:none;background:transparent;width:100%;text-align:left;
+  transition:background .1s,color .1s,padding .2s,justify-content .2s;
+  white-space:nowrap;overflow:hidden;
+}
+.nav-item:hover{background:var(--bg);color:var(--t1);}
+.nav-item.active{background:var(--blue-bg);color:var(--blue);font-weight:600;}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}
+.nav-label{white-space:nowrap;overflow:hidden;transition:opacity .15s,width .2s;}
+#sidebar.collapsed .nav-item{justify-content:center;padding:8px;}
+#sidebar.collapsed .nav-label{opacity:0;width:0;}
+
+.sidebar-footer{
+  padding:12px 16px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--t3);overflow:hidden;white-space:nowrap;
+  transition:opacity .15s;
+}
+#sidebar.collapsed .sidebar-footer{opacity:0;height:0;padding:0;border:none;}
+
+/* ── App shell ── */
+#app{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+#topbar{
+  height:46px;min-height:46px;background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:10px;
+}
+.breadcrumb{font-size:13px;color:var(--t2);display:flex;align-items:center;gap:5px;}
+.breadcrumb .sep{color:var(--t3);}
+.breadcrumb .cur{color:var(--t1);font-weight:600;}
+.topbar-end{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--t1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;cursor:pointer;flex-shrink:0;letter-spacing:.04em;}
+
+/* ── Pages ── */
+.page{flex:1;overflow:hidden;display:none;}
+.page.active{display:flex;flex-direction:column;}
+#page-marketplace.active,#page-observability.active,#page-edit.active{display:block;overflow-y:auto;}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:0 13px;height:32px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:background .1s,opacity .1s;white-space:nowrap;flex-shrink:0;font-family:inherit;}
+.btn-primary{background:var(--t1);color:white;border-color:var(--t1);}
+.btn-primary:hover{background:#333;}
+.btn-primary:disabled{opacity:.3;cursor:not-allowed;}
+.btn-secondary{background:var(--surface);color:var(--t1);border-color:var(--border-md);}
+.btn-secondary:hover{background:var(--bg);}
+.btn-green{background:var(--green);color:white;}
+.btn-green:hover{opacity:.88;}
+.btn-ghost{background:transparent;color:var(--t2);}
+.btn-ghost:hover{background:var(--bg);color:var(--t1);}
+.btn-sm{height:28px;padding:0 10px;font-size:12px;}
+.btn-xs{height:24px;padding:0 8px;font-size:11px;}
+
+/* ── Form ── */
+label{display:block;font-size:11px;font-weight:500;color:var(--t2);margin-bottom:5px;}
+input,select,textarea{display:block;width:100%;padding:0 10px;height:32px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--t1);outline:none;transition:border-color .1s,box-shadow .1s;}
+textarea{height:auto;padding:8px 10px;resize:vertical;}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+input::placeholder{color:var(--t3);}
+
+/* ── Card ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);}
+
+/* ── Pills ── */
+.pill{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:1px 7px;border-radius:99px;border:1px solid transparent;}
+.pill-gray{background:var(--bg);color:var(--t2);border-color:var(--border);}
+.pill-blue{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-bd);}
+.pill-green{background:var(--green-bg);color:var(--green);border-color:var(--green-bd);}
+.pill-amber{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd);}
+.pill-red{background:var(--red-bg);color:var(--red);border-color:var(--red-bd);}
+
+/* ── Status dot ── */
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.dot-green{background:var(--green);}
+.dot-amber{background:var(--amber);}
+.dot-blue{background:var(--blue);}
+
+/* ── Table ── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{text-align:left;padding:8px 14px;font-size:11px;font-weight:600;color:var(--t2);background:var(--bg);border-bottom:1px solid var(--border);}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--t2);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tbody tr:hover td{background:#FAFAFA;}
+
+/* ── Metric ── */
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;}
+.metric-label{font-size:11px;font-weight:500;color:var(--t3);margin-bottom:6px;}
+.metric-value{font-size:24px;font-weight:700;color:var(--t1);line-height:1;letter-spacing:-.5px;}
+.metric-sub{font-size:11px;color:var(--t3);margin-top:4px;}
+
+/* ── Builder: connector list items ── */
+.conn-item{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border-radius:var(--r-lg);border:1px solid var(--border);background:var(--surface);
+  cursor:pointer;transition:border-color .12s,box-shadow .12s;
+}
+.conn-item:hover{border-color:var(--border-md);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.conn-item:active{background:var(--bg);}
+.conn-icon{font-size:22px;line-height:1;flex-shrink:0;}
+.conn-info{flex:1;min-width:0;}
+.conn-name{font-size:13px;font-weight:600;color:var(--t1);}
+.conn-desc{font-size:11px;color:var(--t3);margin-top:1px;}
+.conn-auth{font-size:11px;color:var(--t3);display:flex;align-items:center;gap:4px;margin-top:3px;}
+.conn-arrow svg{width:14px;height:14px;stroke:var(--border-md);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+.conn-item:hover .conn-arrow svg{stroke:var(--t3);}
+
+/* ── Pipeline step cards ── */
+.step-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+.step-card.running{border-color:var(--blue-bd);}
+.step-card.done{border-color:var(--green-bd);}
+.step-card.error{border-color:var(--red-bd);}
+.step-row{display:flex;align-items:center;gap:12px;padding:13px 16px;}
+.step-n{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;}
+.step-n.waiting{background:var(--bg);color:var(--t3);border:1px solid var(--border-md);}
+.step-n.running{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bd);}
+.step-n.done{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd);}
+.step-n.error{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);}
+.step-info{flex:1;min-width:0;}
+.step-title{font-size:13px;font-weight:600;color:var(--t1);}
+.step-title.dim{color:var(--t3);font-weight:400;}
+.step-sub{font-size:11px;color:var(--t3);margin-top:2px;}
+.step-prog{height:2px;background:var(--blue-bg);}
+.step-prog-inner{height:100%;background:var(--blue);border-radius:99px;transition:width .3s;}
+.step-body{padding:2px 16px 12px 52px;}
+.step-sum{font-size:12px;color:var(--t2);margin-bottom:6px;}
+.step-logs{max-height:130px;overflow-y:auto;}
+.log-line{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.75;color:var(--t2);}
+.log-ok{color:var(--green);}
+.log-warn{color:var(--amber);}
+.log-err{color:var(--red);}
+
+/* ── Chat ── */
+.msg-row{display:flex;align-items:flex-start;gap:10px;padding:3px 0;}
+.msg-row.user{flex-direction:row-reverse;}
+.bubble{padding:10px 14px;font-size:13px;line-height:1.65;max-width:540px;border-radius:var(--r-lg);}
+.bubble-bot{background:var(--bg);color:var(--t1);border-radius:3px var(--r-lg) var(--r-lg) var(--r-lg);}
+.bubble-user{background:var(--t1);color:white;border-radius:var(--r-lg) 3px var(--r-lg) var(--r-lg);}
+.bot-icon{width:28px;height:28px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.bot-icon svg{width:28px;height:28px;}
+/* Markdown rendered inside bot bubbles */
+.bubble-bot ul,.bubble-bot ol{margin:5px 0 5px 18px;padding:0;line-height:1.7;}
+.bubble-bot li{margin-bottom:3px;}
+.bubble-bot strong{font-weight:600;color:var(--t1);}
+.bubble-bot em{font-style:italic;color:var(--t2);}
+.bubble-bot code{font-family:'JetBrains Mono',monospace;background:var(--surface);border:1px solid var(--border);padding:1px 5px;border-radius:3px;font-size:11px;}
+
+/* ── Builder: Claude-style layout ── */
+#builder-chat{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--surface);}
+#builder-body{flex:1;overflow-y:auto;}
+#conn-idle{max-width:720px;margin:0 auto;padding:48px 28px 24px;}
+.welcome-title{font-size:22px;font-weight:700;color:var(--t1);letter-spacing:-.4px;margin-bottom:6px;}
+.welcome-sub{font-size:13px;color:var(--t2);margin-bottom:28px;line-height:1.6;}
+.conn-grid-2col{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+#chat-messages{max-width:720px;margin:0 auto;padding:28px 28px 8px;display:none;flex-direction:column;gap:16px;}
+#builder-footer{border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.footer-col{max-width:720px;margin:0 auto;padding:14px 28px;}
+.chat-input-row{display:flex;gap:8px;align-items:center;}
+
+/* ── Artifacts Panel ── */
+#artifacts-panel{width:0;min-width:0;overflow:hidden;border-left:0px solid var(--border);background:var(--bg);display:flex;flex-direction:column;flex-shrink:0;transition:width .25s ease,min-width .25s ease;}
+#artifacts-panel.open{width:440px;min-width:440px;border-left-width:1px;}
+.ap-header{height:46px;min-height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.ap-title{font-size:13px;font-weight:600;color:var(--t1);display:flex;align-items:center;gap:7px;}
+#artifacts-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:0;}
+
+/* ── Accordion ── */
+.acc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:8px;}
+.acc-head{display:flex;align-items:center;gap:9px;padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--t1);user-select:none;border-bottom:1px solid transparent;transition:background .1s;}
+.acc-head:hover{background:var(--bg);}
+.acc-head.open{border-bottom-color:var(--border);}
+.acc-icon{font-size:14px;}
+.acc-arrow{margin-left:auto;color:var(--t3);font-size:9px;transition:transform .15s;}
+.acc-arrow.open{transform:rotate(90deg);}
+.acc-body{padding:16px;display:none;}
+.acc-body.open{display:block;}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab-item{padding:8px 14px;font-size:13px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px;transition:color .1s,border-color .1s;}
+.tab-item:hover{color:var(--t1);}
+.tab-item.active{color:var(--t1);border-bottom-color:var(--t1);font-weight:600;}
+
+/* ── Empty ── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 24px;text-align:center;}
+.empty-icon{font-size:28px;margin-bottom:12px;opacity:.35;}
+.empty-title{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:6px;}
+.empty-body{font-size:13px;color:var(--t2);max-width:280px;line-height:1.6;}
+
+/* ── Pipeline explainer (idle state) ── */
+.explainer-step{display:flex;gap:14px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);}
+.explainer-n{width:26px;height:26px;border-radius:50%;background:var(--bg);border:1px solid var(--border-md);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--t3);flex-shrink:0;}
+.explainer-title{font-size:13px;font-weight:600;color:var(--t1);}
+.explainer-body{font-size:12px;color:var(--t2);margin-top:3px;line-height:1.55;}
+
+/* ── Marketplace list ── */
+.mp-metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.mp-metric-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;border-left-width:4px;border-left-style:solid;}
+.mp-metric-card strong{font-size:26px;font-weight:700;color:var(--t1);display:block;letter-spacing:-.6px;line-height:1;margin-bottom:4px;}
+.mp-metric-label{font-size:12px;font-weight:600;color:var(--t1);margin-bottom:2px;}
+.mp-metric-sub{font-size:11px;color:var(--t3);}
+.mp-list{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+.mp-list-head{display:grid;grid-template-columns:1fr 110px 1fr 90px 130px;gap:0;padding:8px 20px;background:var(--bg);border-bottom:1px solid var(--border);}
+.mp-list-head span{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}
+.mp-row{display:grid;grid-template-columns:1fr 110px 1fr 90px 130px;gap:0;padding:0 20px;border-bottom:1px solid var(--border);min-height:64px;align-items:center;transition:background .1s;}
+.mp-row:last-child{border-bottom:none;}
+.mp-row:hover{background:var(--bg);}
+.mp-row:hover .mp-delete{opacity:1;}
+.mp-conn-main{display:flex;align-items:center;gap:12px;min-width:0;}
+.mp-icon{width:36px;height:36px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.mp-name{font-size:13px;font-weight:600;color:var(--t1);white-space:nowrap;}
+.mp-meta{font-size:11px;color:var(--t3);margin-top:1px;}
+.mp-streams{display:flex;flex-wrap:wrap;gap:3px;align-items:center;padding:10px 0;}
+.mp-accuracy{font-size:14px;font-weight:700;color:var(--t1);letter-spacing:-.3px;}
+.mp-accuracy-sub{font-size:10px;color:var(--t3);margin-top:1px;}
+.mp-actions{display:flex;align-items:center;gap:5px;justify-content:flex-end;}
+.mp-delete{opacity:0;transition:opacity .15s;color:var(--t3);}
+.mp-delete:hover{color:var(--red) !important;}
+
+/* ── Marketplace sections ── */
+.mp-section{margin-bottom:40px;}
+.mp-section-hd{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.mp-section-label{font-size:13px;font-weight:700;color:var(--t1);letter-spacing:-.1px;}
+.mp-section-sub{font-size:11px;color:var(--t3);margin-top:2px;}
+.mp-section-count{font-size:11px;color:var(--t3);font-weight:500;background:var(--bg);border:1px solid var(--border);padding:2px 8px;border-radius:99px;}
+/* status dot */
+.mp-dot{display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.mp-dot-green{background:#16A34A;}
+.mp-dot-amber{background:#D97706;}
+
+/* ── Connector tile (shared) ── */
+.mp-conn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.mp-ctile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;display:flex;flex-direction:column;transition:border-color .12s,box-shadow .12s;}
+.mp-ctile:hover{box-shadow:0 2px 12px rgba(0,0,0,.08);border-color:var(--border-md);}
+.mp-ctile.is-production{border-color:#BBF7D0;}
+.mp-ctile.is-unbuilt{background:var(--bg);border-style:dashed;}
+.mp-ctile-top{display:flex;align-items:flex-start;gap:11px;margin-bottom:12px;}
+.mp-ctile-icon{width:38px;height:38px;border-radius:9px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.mp-ctile-name{font-size:13px;font-weight:700;color:var(--t1);letter-spacing:-.1px;line-height:1.3;}
+.mp-ctile-desc{font-size:11px;color:var(--t3);line-height:1.4;}
+.mp-ctile-streams{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px;min-height:22px;}
+.mp-ctile-footer{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border);margin-top:auto;}
+.mp-ctile-stats{display:flex;gap:14px;}
+.mp-ctile-stat{font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;}
+.mp-ctile-stat strong{font-size:15px;font-weight:700;color:var(--t1);display:block;letter-spacing:-.3px;line-height:1.2;margin-bottom:1px;text-transform:none;}
+.mp-ctile-actions{display:flex;align-items:center;gap:5px;}
+
+/* ── Marketplace filter bar ── */
+.mp-filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
+.mp-filter-bar input[type="text"]{flex:1;max-width:280px;height:34px;}
+.mp-filter-bar select{width:auto;height:34px;padding:0 28px 0 10px;font-size:12px;cursor:pointer;}
+
+/* ── Add custom tile ── */
+.mp-add-tile{background:transparent;border:1.5px dashed var(--border-md);border-radius:12px;padding:28px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:border-color .15s,background .15s;text-align:center;min-height:160px;}
+.mp-add-tile:hover{border-color:var(--blue);background:var(--blue-bg);}
+.mp-add-tile-ring{width:40px;height:40px;border-radius:50%;background:var(--bg);border:1px solid var(--border-md);display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
+.mp-add-tile:hover .mp-add-tile-ring{background:var(--blue-bg);border-color:var(--blue-bd);}
+.mp-add-tile-label{font-size:13px;font-weight:600;color:var(--t1);}
+.mp-add-tile-sub{font-size:11px;color:var(--t3);line-height:1.4;}
+
+/* ── Configure page tabs ── */
+.cfg-header{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
+.cfg-top{padding:16px 28px 12px;display:flex;align-items:center;justify-content:space-between;}
+.cfg-conn-info{display:flex;align-items:center;gap:13px;}
+.cfg-icon{width:40px;height:40px;border-radius:10px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.cfg-name{font-size:16px;font-weight:700;color:var(--t1);}
+.cfg-meta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap;}
+.cfg-tabs{display:flex;padding:0 28px;}
+.cfg-tab{padding:9px 16px;font-size:13px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px;white-space:nowrap;transition:color .1s,border-color .1s;line-height:1.4;}
+.cfg-tab:hover{color:var(--t1);}
+.cfg-tab.active{color:var(--t1);border-bottom-color:var(--t1);font-weight:600;}
+.cfg-body{padding:24px 28px 40px;}
+
+/* ── Form section cards ── */
+.form-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:14px;overflow:hidden;}
+.form-section-head{padding:11px 18px;border-bottom:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:space-between;}
+.form-section-title{font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;}
+.form-section-body{padding:18px;}
+
+/* ── Stream table (Settings tab) ── */
+.stream-tbl-head{display:grid;grid-template-columns:1fr 1fr 110px 80px 60px;gap:0;padding:7px 18px;background:var(--bg);border-bottom:1px solid var(--border);}
+.stream-tbl-head span{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}
+.stream-item{border-bottom:1px solid var(--border);}
+.stream-item:last-child{border-bottom:none;}
+.stream-item-row{display:grid;grid-template-columns:1fr 1fr 110px 80px 60px;gap:0;padding:10px 18px;cursor:pointer;align-items:center;transition:background .1s;}
+.stream-item-row:hover{background:var(--bg);}
+.stream-item-expand{padding:16px 18px;background:var(--bg);border-top:1px solid var(--border);display:none;}
+.stream-item-expand.open{display:block;}
+.stream-arrow{color:var(--t3);font-size:10px;text-align:center;transition:transform .15s;}
+.stream-arrow.open{transform:rotate(90deg);}
+
+/* ── Obs: Overview health cards + feed ── */
+.obs-health-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+.obs-health-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;border-left:3px solid var(--border-md);}
+.obs-health-card.ok{border-left-color:var(--green);}
+.obs-health-card.fail{border-left-color:var(--red);}
+.obs-health-card.warn{border-left-color:var(--amber);}
+.obs-health-name{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px;display:flex;align-items:center;gap:7px;}
+.obs-health-row{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px;}
+.obs-health-val{font-weight:600;color:var(--t2);}
+.activity-list{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+.activity-head{padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;}
+.activity-item{display:grid;grid-template-columns:8px 130px 130px 1fr 70px 70px 100px;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);font-size:12px;}
+.activity-item:last-child{border-bottom:none;}
+.activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* ── Sync inner tabs ── */
+.sync-inner-tab{background:none;border:none;border-bottom:2px solid transparent;padding:10px 14px;font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;transition:color .15s,box-shadow .15s;}
+.sync-inner-tab:hover{color:var(--t2);}
+.sync-inner-tab.active{color:var(--blue);box-shadow:inset 0 -2px 0 var(--blue);font-weight:600;}
+
+/* ── Notification cards ── */
+.notif-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
+.notif-card{pointer-events:all;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:0 8px 32px rgba(0,0,0,.14);min-width:300px;max-width:440px;overflow:hidden;animation:notif-in .2s ease;cursor:pointer;}
+@keyframes notif-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.notif-body{display:flex;align-items:center;gap:12px;padding:14px 16px;border-left:4px solid transparent;}
+.notif-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.notif-msg{font-size:13px;font-weight:500;color:var(--t1);flex:1;line-height:1.4;}
+.notif-progress{height:3px;background:var(--border);}
+.notif-bar{height:3px;width:100%;}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.pulse{animation:pulse 1.5s ease-in-out infinite;}
+
+/* ── Settings modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);width:420px;max-width:90vw;box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden;}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:14px;font-weight:700;color:var(--t1);}
+.modal-body{padding:20px;}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.icon-btn{width:32px;height:32px;border:none;background:transparent;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);}
+.icon-btn:hover{background:var(--bg);color:var(--t1);}
+.icon-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ── Inline credential card ── */
+.cred-card{margin-top:10px;background:var(--surface);border:1px solid var(--blue-bd);border-radius:var(--r-lg);padding:14px 16px;}
+.cred-card-title{font-size:12px;font-weight:600;color:var(--t1);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.cred-card-title svg{width:13px;height:13px;stroke:var(--blue);fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;}
+.cred-card-input{display:flex;gap:6px;}
+.cred-card-input input{flex:1;height:30px;font-size:12px;}
+.cred-card-input button{height:30px;font-size:12px;padding:0 12px;}
+
+/* ── Artifacts panel tabs ── */
+.ap-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 8px;}
+.ap-tab{padding:8px 10px;font-size:12px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px;transition:color .1s,border-color .1s;white-space:nowrap;}
+.ap-tab:hover{color:var(--t1);}
+.ap-tab.active{color:var(--t1);border-bottom-color:var(--t1);font-weight:600;}
+
+/* ── API Docs in artifacts panel ── */
+.api-docs-wrap{padding:2px 0;}
+.api-doc-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:10px;}
+.api-doc-sec-head{padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;}
+.api-doc-sec-body{padding:14px;}
+.api-doc-row{display:flex;gap:8px;margin-bottom:8px;font-size:12px;}
+.api-doc-label{width:110px;flex-shrink:0;color:var(--t3);font-weight:500;}
+.api-doc-val{color:var(--t1);flex:1;line-height:1.55;}
+.api-stream-row{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.api-stream-row:last-child{border-bottom:none;}
+.api-stream-name{font-weight:600;color:var(--t1);margin-bottom:3px;}
+.api-stream-desc{color:var(--t2);font-size:11px;line-height:1.5;}
+
+/* ── Configure Docs tab ── */
+.cfg-docs-wrap{padding:0;}
+.cfg-doc-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:14px;}
+.cfg-doc-sec-head{padding:11px 18px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;}
+.cfg-doc-sec-body{padding:18px;}
+.cfg-doc-row{display:flex;gap:10px;margin-bottom:10px;font-size:13px;}
+.cfg-doc-label{width:130px;flex-shrink:0;color:var(--t3);font-weight:500;}
+.cfg-doc-val{color:var(--t1);flex:1;line-height:1.6;}
+.cfg-doc-stream{padding:12px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.cfg-doc-stream:last-child{border-bottom:none;}
+.cfg-doc-stream-name{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px;display:flex;align-items:center;gap:7px;}
+.cfg-doc-stream-desc{color:var(--t2);line-height:1.55;}
+.cfg-typing{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:12px;color:var(--t3);}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:var(--t3);animation:pulse 1.2s ease-in-out infinite;}
+.typing-dot:nth-child(2){animation-delay:.2s;}
+.typing-dot:nth-child(3){animation-delay:.4s;}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside id="sidebar">
+  <div class="logo" onclick="toggleSidebar()" title="Toggle sidebar">
+    <div class="logo-mark">
+      <div class="logo-dot">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#2563EB"/><circle cx="16" cy="16" r="7" fill="white"/></svg>
+      </div>
+      <span class="logo-text">&nbsp;CloudEagle</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">Connectors</div>
+    <button class="nav-item active" data-page="marketplace" onclick="navigate('marketplace')" title="Marketplace">
+      <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
+      <span class="nav-label">Marketplace</span>
+    </button>
+    <div class="nav-section">Monitor</div>
+    <button class="nav-item" data-page="observability" onclick="navigate('observability')" title="Observability">
+      <svg viewBox="0 0 16 16"><polyline points="1.5,12 4.5,8 7.5,10 10.5,5 14.5,7"/><line x1="1.5" y1="14.5" x2="14.5" y2="14.5"/></svg>
+      <span class="nav-label">Observability</span>
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <span id="conn-count-sidebar">0</span> connectors registered
+  </div>
+</aside>
+
+<!-- ══ APP ══ -->
+<div id="app">
+
+  <!-- Topbar -->
+  <div id="topbar">
+    <div class="breadcrumb" id="breadcrumb"><span class="cur">Marketplace</span></div>
+    <div class="topbar-end">
+      <button id="artifacts-btn" class="btn btn-secondary btn-sm" onclick="toggleArtifacts()" style="display:none;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2l1.4 3.6L13 7l-3.6 1.4L8 12l-1.4-3.6L3 7l3.6-1.4L8 2z"/></svg>
+        <span id="artifacts-btn-label">Pipeline</span>
+      </button>
+      <button class="icon-btn" onclick="openSettings()" title="Settings">
+        <!-- Feather 'settings' gear icon -->
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <div class="avatar" title="Account">CE</div>
+    </div>
+  </div>
+
+  <!-- ══════════════ AI BUILDER ══════════════ -->
+  <div id="page-builder" class="page" style="flex-direction:row;overflow:hidden;">
+
+    <!-- ── Chat Area ── -->
+    <div id="builder-chat">
+      <div id="builder-body">
+
+        <!-- IDLE: Welcome + connector grid -->
+        <div id="conn-idle">
+          <div class="welcome-title">What would you like to connect?</div>
+          <div class="welcome-sub">Select a connector below, or describe an API in the input — I'll fetch the docs, fill the manifest with AI, and run 4-layer validation.</div>
+          <div id="conn-grid-items" class="conn-grid-2col"></div>
+        </div>
+
+        <!-- ACTIVE: Chat messages -->
+        <div id="chat-messages"></div>
+
+      </div><!-- /builder-body -->
+
+      <!-- Footer -->
+      <div id="builder-footer">
+
+        <!-- Token form (hidden) -->
+        <div id="token-section" style="display:none;" class="footer-col">
+          <div style="font-size:12px;font-weight:600;color:var(--t1);margin-bottom:10px;" id="token-label">API credentials</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <input type="password" id="api-token-input" placeholder="API token — leave blank for mock data">
+            <input type="password" id="claude-key-input" placeholder="Claude API key (optional)">
+            <div style="display:flex;gap:7px;margin-top:2px;">
+              <button class="btn btn-primary" style="flex:1;" onclick="submitToken()">Start building</button>
+              <button class="btn btn-secondary" onclick="resetBuilder()">Back</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Review controls (hidden) -->
+        <div id="review-section" style="display:none;" class="footer-col">
+          <div style="background:var(--green-bg);border-radius:var(--r-lg);border:1px solid var(--green-bd);padding:14px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--t1);">Pipeline complete — ready to register</div>
+                <div style="font-size:12px;color:var(--t2);margin-top:2px;">
+                  <a href="#" onclick="openArtifacts();return false;" style="color:var(--blue);font-weight:500;">View full pipeline &amp; fields →</a>
+                </div>
+              </div>
+              <div style="display:flex;gap:7px;flex-shrink:0;">
+                <button class="btn btn-green btn-sm" onclick="approveBuild()">Approve &amp; register</button>
+                <button class="btn btn-secondary btn-sm" onclick="resetBuilder()">Reject</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat input -->
+        <div id="chat-input-section" class="footer-col">
+          <div class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Build a connector for GitHub, Salesforce, or any REST API..." onkeydown="if(event.key==='Enter')sendChat()" style="flex:1;">
+            <button class="btn btn-primary" onclick="sendChat()" style="padding:0 13px;flex-shrink:0;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4 13,8 9,12"/></svg>
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /builder-footer -->
+    </div><!-- /builder-chat -->
+
+    <!-- ── Artifacts Panel ── -->
+    <div id="artifacts-panel">
+      <div class="ap-header">
+        <div class="ap-title">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2l1.4 3.6L13 7l-3.6 1.4L8 12l-1.4-3.6L3 7l3.6-1.4L8 2z"/></svg>
+          Artifacts
+          <span id="pipeline-pct" style="display:none;font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:99px;padding:1px 8px;">0%</span>
+        </div>
+        <button class="btn btn-ghost btn-xs" onclick="toggleArtifacts()" title="Close panel" style="padding:0 6px;">
+          <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="11" y2="11"/><line x1="11" y1="1" x2="1" y2="11"/></svg>
+        </button>
+      </div>
+      <div class="ap-tabs">
+        <div class="ap-tab active" id="aptab-pipeline" onclick="switchArtifactsTab('pipeline')">Pipeline</div>
+        <div class="ap-tab" id="aptab-apidocs" onclick="switchArtifactsTab('apidocs')">Docs</div>
+      </div>
+
+      <div id="artifacts-body">
+        <!-- Idle: explainer -->
+        <div id="pipeline-explainer" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">How it works</div>
+          <div class="explainer-step">
+            <div class="explainer-n">1</div>
+            <div><div class="explainer-title">Documentation Ingestion</div><div class="explainer-body">Fetches the OpenAPI spec or scrapes API docs to extract endpoints, schemas, and auth requirements.</div></div>
+          </div>
+          <div class="explainer-step">
+            <div class="explainer-n">2</div>
+            <div><div class="explainer-title">AI Manifest Fill</div><div class="explainer-body">Claude reads the docs and fills every manifest field with a citation from the source. No hallucinations.</div></div>
+          </div>
+          <div class="explainer-step">
+            <div class="explainer-n">3</div>
+            <div><div class="explainer-title">4-Layer Validation</div><div class="explainer-body">Schema · Secret scan · Live API probe · Contract test. All 4 must pass before review.</div></div>
+          </div>
+          <div class="explainer-step">
+            <div class="explainer-n">4</div>
+            <div><div class="explainer-title">Human Review</div><div class="explainer-body">Review AI output, inspect citations and sample records, then approve to register.</div></div>
+          </div>
+        </div>
+
+        <!-- Live pipeline steps (shown when building) -->
+        <div id="pipeline-steps" style="display:none;flex-direction:column;gap:8px;"></div>
+
+        <!-- Fields list — shown inline after AI Manifest Fill step completes -->
+        <div id="fields-section" style="display:none;margin-top:0;">
+          <div style="border-left:2px solid var(--blue);margin-left:14px;padding-left:10px;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:11px;font-weight:600;color:var(--t2);" id="fields-count-label">AI-filled fields</div>
+              <button onclick="toggleFieldsTable()" style="font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;padding:0;" id="fields-toggle-btn">Hide ▲</button>
+            </div>
+            <div id="fields-table-wrap" style="display:flex;flex-direction:column;gap:6px;">
+              <div id="fields-tbody"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample records -->
+        <div id="records-section" style="display:none;margin-top:16px;padding-bottom:24px;">
+          <div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Sample records</div>
+          <div class="card" style="overflow-x:auto;" id="records-wrap"></div>
+        </div>
+
+        <!-- API Docs tab (hidden by default) -->
+        <div id="ap-apidocs-section" style="display:none;padding-bottom:24px;">
+          <div id="ap-apidocs-content">
+            <div class="empty">
+              <div class="empty-icon">📄</div>
+              <div class="empty-title">API Docs</div>
+              <div class="empty-body">Docs will appear here once the AI has analyzed the API.</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /artifacts-body -->
+    </div><!-- /artifacts-panel -->
+
+  </div>
+
+  <!-- ══════════════ MARKETPLACE ══════════════ -->
+  <div id="page-marketplace" class="page" style="overflow-y:auto;">
+    <div style="padding:24px 28px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:15px;font-weight:700;letter-spacing:-.2px;color:var(--t1);">Connectors</div>
+        <div style="font-size:12px;color:var(--t3);margin-top:2px;">Versioned data connectors — inbuilt and custom</div>
+      </div>
+    </div>
+    <div style="padding:20px 28px 0;" id="reg-metrics"></div>
+    <div style="padding:0 28px 48px;" id="reg-cards"></div>
+  </div>
+
+  <!-- ══════════════ CONFIGURE (no sidebar link) ══════════════ -->
+  <div id="page-edit" class="page" style="overflow-y:auto;">
+    <div id="edit-content">
+      <div class="empty" style="padding-top:80px;">
+        <div class="empty-icon">⚙</div>
+        <div class="empty-title">No connector selected</div>
+        <div class="empty-body">Open a connector from the Marketplace and click Configure.</div>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="navigate('marketplace')">Go to Marketplace</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ OBSERVABILITY ══════════════ -->
+  <div id="page-observability" class="page" style="overflow-y:auto;">
+    <div style="padding:24px 28px 0;display:flex;align-items:flex-start;justify-content:space-between;">
+      <div>
+        <div style="font-size:16px;font-weight:700;letter-spacing:-.2px;">Observability</div>
+        <div style="font-size:12px;color:var(--t3);margin-top:3px;">System health, sync history, and destination data</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="loadObservability()">Refresh</button>
+    </div>
+    <div style="padding:14px 28px 0;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;" id="obs-metrics"></div>
+    <div style="padding:14px 28px 32px;">
+      <div class="tabs">
+        <div class="tab-item active" id="otab-overview"    onclick="obsTab('overview')">Overview</div>
+        <div class="tab-item"        id="otab-history"     onclick="obsTab('history')">Sync History</div>
+        <div class="tab-item"        id="otab-data"        onclick="obsTab('data')">Destination Data</div>
+        <div class="tab-item"        id="otab-checkpoints" onclick="obsTab('checkpoints')">Checkpoints</div>
+      </div>
+      <div id="obs-body"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ SETTINGS MODAL ══ -->
+<div id="settings-modal" class="modal-overlay" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title">Settings</div>
+      <button class="icon-btn" onclick="closeSettings()">
+        <svg viewBox="0 0 12 12"><line x1="1" y1="1" x2="11" y2="11"/><line x1="11" y1="1" x2="1" y2="11"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:16px;">
+        <label>Claude API Key</label>
+        <input type="password" id="settings-claude-key" placeholder="sk-ant-…" autocomplete="off">
+        <div style="font-size:11px;color:var(--t3);margin-top:5px;">Used for AI manifest fill and chat. Stored in your browser (localStorage). Leave blank to use mock data.</div>
+      </div>
+      <div>
+        <label>Model</label>
+        <select id="settings-model">
+          <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (default)</option>
+          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (faster)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary btn-sm" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="delete-modal" class="modal-overlay" onclick="if(event.target===this)closeDeleteModal()">
+  <div class="modal-box" style="width:420px;">
+    <div class="modal-head">
+      <div class="modal-title" style="color:var(--red);">Delete connector</div>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--red-bg);border:1px solid var(--red-bd);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:6px;">Delete <span id="delete-modal-name" style="font-style:italic;"></span>?</div>
+          <div style="font-size:13px;color:var(--t2);line-height:1.6;">This permanently removes the connector and all its versions from the registry. Synced data in the destination is not affected.<br><br><strong style="color:var(--t1);">This action cannot be undone.</strong></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:flex-end;gap:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-sm" id="delete-modal-confirm" style="background:var(--red);color:#fff;border-color:var(--red);">Delete connector</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generic info modal (test results, etc.) -->
+<div id="info-modal" class="modal-overlay" onclick="if(event.target===this)closeInfoModal()">
+  <div class="modal-box" style="width:520px;">
+    <div class="modal-head">
+      <div class="modal-title" id="info-modal-title">Details</div>
+    </div>
+    <div class="modal-body" id="info-modal-body" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-primary btn-sm" onclick="closeInfoModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────
+const CONNECTORS = {
+  calendly:   {display:'Calendly',   icon:'📅', auth:'Bearer token',   desc:'Scheduling & calendar events',       needsAuth:true},
+  github:     {display:'GitHub',     icon:'🐙', auth:'No auth needed', desc:'Repos, releases & contributors',     needsAuth:false},
+  salesforce: {display:'Salesforce', icon:'☁️', auth:'OAuth 2.0',      desc:'CRM contacts & opportunities',       needsAuth:true},
+  hubspot:    {display:'HubSpot',    icon:'🟠', auth:'API key',        desc:'Marketing & sales CRM',              needsAuth:true},
+  slack:      {display:'Slack',      icon:'💬', auth:'OAuth 2.0',      desc:'Channels, messages & users',         needsAuth:true},
+  stripe:     {display:'Stripe',     icon:'💳', auth:'API key',        desc:'Payments, customers & invoices',     needsAuth:true},
+};
+const STEPS = [
+  {title:'Documentation Ingestion', sub:'Fetches OpenAPI spec or scrapes API docs'},
+  {title:'AI Manifest Fill',        sub:'Claude fills every field with citations'},
+  {title:'4-Layer Validation',      sub:'Schema · Secret scan · Live probe · Contract test'},
+  {title:'Human Review',            sub:'Review and approve before registering'},
+];
+const ICONS = {calendly:'📅',github:'🐙',salesforce:'☁️',hubspot:'🟠',slack:'💬',stripe:'💳'};
+
+// ─────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────
+const S = {
+  stage:'idle', connector:null, buildId:null,
+  stepStatus:['waiting','waiting','waiting','waiting'],
+  stepLogs:  [[],[],[],[]],
+  stepSummary:['','','',''],
+  editConn:null, editManifest:null, editDirty:false,
+  obsTab:'overview', obsData:null, obsTables:[],
+  sidebarCollapsed:false,
+  _mpConnectors:[], _mpType:'all', _mpStatus:'all',
+  _chatHistory: [],
+  _creds: {},       // credential per connector — persists for the session
+  _syncEs: null,    // active sync EventSource (so we can close before re-running)
+};
+
+// ─────────────────────────────────────────
+// SIDEBAR
+// ─────────────────────────────────────────
+function toggleSidebar() {
+  S.sidebarCollapsed = !S.sidebarCollapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed', S.sidebarCollapsed);
+}
+
+// ─────────────────────────────────────────
+// ARTIFACTS PANEL
+// ─────────────────────────────────────────
+function openArtifacts() {
+  document.getElementById('artifacts-panel').classList.add('open');
+  const btn = document.getElementById('artifacts-btn');
+  if (btn) btn.style.display = 'flex';
+  // Ensure pipeline tab is active by default when opening
+  document.getElementById('ap-apidocs-section').style.display = 'none';
+  if (_apTab !== 'pipeline') {
+    _apTab = 'pipeline';
+    document.getElementById('aptab-pipeline')?.classList.add('active');
+    document.getElementById('aptab-apidocs')?.classList.remove('active');
+  }
+}
+
+function toggleArtifacts() {
+  const panel = document.getElementById('artifacts-panel');
+  const isOpen = panel.classList.toggle('open');
+  const lbl = document.getElementById('artifacts-btn-label');
+  if (lbl) {
+    const pct = document.getElementById('pipeline-pct');
+    const pctTxt = pct && pct.style.display!=='none' ? ` · ${pct.textContent}` : '';
+    lbl.textContent = isOpen ? 'Close panel' : `Pipeline${pctTxt}`;
+  }
+}
+
+// ─────────────────────────────────────────
+// ROUTING
+// ─────────────────────────────────────────
+function navigate(page, params={}) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.page===page));
+  document.getElementById('page-'+page).classList.add('active');
+  const titles = {builder:'AI Builder', marketplace:'Marketplace', edit:'Configure', observability:'Observability'};
+  setBreadcrumb(titles[page] || page);
+  const artifactsBtn = document.getElementById('artifacts-btn');
+  if (artifactsBtn) artifactsBtn.style.display = (page==='builder' && S.stage!=='idle') ? 'flex' : 'none';
+  if (page==='marketplace')    loadMarketplace();
+  if (page==='observability')  loadObservability();
+  if (page==='edit' && params.connector) openEdit(params.connector);
+}
+
+function setBreadcrumb(title, sub='') {
+  document.getElementById('breadcrumb').innerHTML = sub
+    ? `<span style="color:var(--t2)">${esc(title)}</span><span class="sep"> › </span><span class="cur">${esc(sub)}</span>`
+    : `<span class="cur">${esc(title)}</span>`;
+}
+
+// ─────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────
+function esc(s) {
+  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function ea(s) { return String(s??'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+async function api(path, opts={}) {
+  const r = await fetch(path, {...opts, headers:{'Content-Type':'application/json',...(opts.headers||{})}});
+  if (!r.ok) {
+    let detail = `HTTP ${r.status}`;
+    try { const body = await r.json(); detail = body.detail || JSON.stringify(body) || detail; } catch {}
+    throw new Error(detail);
+  }
+  return r.json();
+}
+
+function toast(msg, type='ok') {
+  const duration = 3200;
+  const cfg = {
+    ok:   { border:'#10B981', iconBg:'#F0FDF4', iconColor:'#10B981', icon:`<polyline points="20 6 9 17 4 12"/>` },
+    err:  { border:'#DC2626', iconBg:'#FEF2F2', iconColor:'#DC2626', icon:`<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>` },
+    info: { border:'#2563EB', iconBg:'#EFF6FF', iconColor:'#2563EB', icon:`<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>` },
+  };
+  const c = cfg[type] || cfg.ok;
+
+  let container = document.getElementById('notif-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'notif-container';
+    container.className = 'notif-container';
+    document.body.appendChild(container);
+  }
+
+  const card = document.createElement('div');
+  card.className = 'notif-card';
+  card.innerHTML = `
+    <div class="notif-body" style="border-left-color:${c.border};">
+      <div class="notif-icon" style="background:${c.iconBg};">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${c.iconColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${c.icon}</svg>
+      </div>
+      <div class="notif-msg">${esc(msg)}</div>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <div class="notif-progress"><div class="notif-bar" style="background:${c.border};transition:width ${duration}ms linear;"></div></div>`;
+  container.appendChild(card);
+
+  // Kick off shrinking progress bar
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    card.querySelector('.notif-bar').style.width = '0%';
+  }));
+
+  const timer = setTimeout(() => dismiss(), duration);
+  card.onclick = () => dismiss();
+
+  function dismiss() {
+    clearTimeout(timer);
+    card.style.transition = 'opacity .18s ease, transform .18s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(-8px)';
+    setTimeout(() => card.remove(), 200);
+  }
+}
+
+function openInfoModal(title, bodyHtml) {
+  document.getElementById('info-modal-title').textContent = title;
+  document.getElementById('info-modal-body').innerHTML = bodyHtml;
+  document.getElementById('info-modal').classList.add('open');
+}
+function closeInfoModal() {
+  document.getElementById('info-modal').classList.remove('open');
+}
+
+function detectConnector(text) {
+  const t = text.toLowerCase();
+  for (const [k,v] of Object.entries(CONNECTORS))
+    if (t.includes(k) || t.includes(v.display.toLowerCase())) return k;
+  return null;
+}
+
+function renderTable(cols, rows, container) {
+  if (!cols.length) { container.innerHTML='<div class="empty"><div class="empty-body">No data available.</div></div>'; return; }
+  container.innerHTML=`<div style="overflow-x:auto;"><table class="tbl">
+    <thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r=>`<tr>${r.map(v=>`<td class="mono" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(String(v??''))}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function yamlDump(obj, depth=0) {
+  const pad='  '.repeat(depth), out=[];
+  for (const [k,v] of Object.entries(obj||{})) {
+    if (v===null||v===undefined) out.push(`${pad}${k}: ~`);
+    else if (Array.isArray(v)) {
+      out.push(`${pad}${k}:`);
+      v.forEach(item => typeof item==='object'&&item!==null
+        ? out.push(`${pad}-\n${yamlDump(item,depth+1).replace(/^/mg,'  ')}`)
+        : out.push(`${pad}- ${item}`));
+    } else if (typeof v==='object') {
+      out.push(`${pad}${k}:`);
+      out.push(yamlDump(v,depth+1));
+    } else out.push(`${pad}${k}: ${v}`);
+  }
+  return out.join('\n');
+}
+
+// ─────────────────────────────────────────
+// MARKDOWN RENDERER  (for bot messages only)
+// ─────────────────────────────────────────
+// Converts LLM markdown to safe HTML. Always call esc() first so no XSS can
+// slip through even if the model produces malicious output.
+function renderMarkdown(text) {
+  let s = esc(text);
+
+  // Horizontal rule: ---
+  s = s.replace(/^---+$/gm,
+    '<div style="border-top:1px solid var(--border);margin:8px 0;"></div>');
+
+  // Headings — rendered as small uppercase labels to fit the chat bubble
+  s = s.replace(/^#{1,3}\s+(.+)$/gm,
+    '<div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;' +
+    'letter-spacing:.07em;margin:10px 0 4px;">$1</div>');
+
+  // Bold and italic
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\*([^*\n]+)\*/g,     '<em>$1</em>');
+
+  // Inline code
+  s = s.replace(/`([^`\n]+)`/g,
+    '<code style="font-family:\'JetBrains Mono\',monospace;background:var(--bg);' +
+    'border:1px solid var(--border);padding:1px 5px;border-radius:3px;' +
+    'font-size:11px;color:var(--blue);">$1</code>');
+
+  // Bullet list blocks  (lines starting with  - / * / •)
+  s = s.replace(/((?:(?:^|\n)[ \t]*[-*•]\s+[^\n]+)+)/g, (match) => {
+    const items = match.trim().split('\n')
+      .filter(l => l.trim())
+      .map(l => `<li>${l.replace(/^[ \t]*[-*•]\s+/, '')}</li>`)
+      .join('');
+    return `\n<ul style="margin:5px 0 5px 18px;padding:0;line-height:1.7;">${items}</ul>`;
+  });
+
+  // Numbered list blocks  (lines starting with  1. / 2. …)
+  s = s.replace(/((?:(?:^|\n)\d+\.\s+[^\n]+)+)/g, (match) => {
+    const items = match.trim().split('\n')
+      .filter(l => l.trim())
+      .map(l => `<li>${l.replace(/^\d+\.\s+/, '')}</li>`)
+      .join('');
+    return `\n<ol style="margin:5px 0 5px 18px;padding:0;line-height:1.7;">${items}</ol>`;
+  });
+
+  // Paragraph breaks (double newline) then single newlines
+  s = s.replace(/\n\n+/g, '<br>');
+  s = s.replace(/\n/g, '<br>');
+
+  // Strip leading / trailing <br> so bubbles don't start with blank lines
+  s = s.replace(/^(<br\s*\/?>)+|(<br\s*\/?>)+$/g, '');
+
+  return s;
+}
+
+// ─────────────────────────────────────────
+// CHAT
+// ─────────────────────────────────────────
+function addMsg(role, html) {
+  const wrap = document.getElementById('chat-messages');
+  if (wrap.style.display === 'none' || !wrap.style.display) {
+    wrap.style.display = 'flex';
+    wrap.style.flexDirection = 'column';
+  }
+  const div = document.createElement('div');
+  div.className = `msg-row${role==='user'?' user':''}`;
+  div.innerHTML = role==='user'
+    ? `<div class="bubble bubble-user">${html}</div>`
+    : `<div class="bot-icon"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#2563EB"/><circle cx="16" cy="16" r="7" fill="white"/></svg></div><div class="bubble bubble-bot">${html}</div>`;
+  wrap.appendChild(div);
+  const body = document.getElementById('builder-body');
+  body.scrollTop = body.scrollHeight;
+}
+
+function buildConnGrid() {
+  document.getElementById('conn-grid-items').innerHTML = Object.entries(CONNECTORS).map(([k,v])=>`
+    <div class="conn-item" onclick="handleConnector('${k}')">
+      <span class="conn-icon">${v.icon}</span>
+      <div class="conn-info">
+        <div class="conn-name">${v.display}</div>
+        <div class="conn-desc">${v.desc}</div>
+        <div class="conn-auth">
+          <svg viewBox="0 0 12 12" width="10" height="10" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="5" width="8" height="6" rx="1"/><path d="M4 5V3.5a2 2 0 0 1 4 0V5"/></svg>
+          ${v.auth}
+        </div>
+      </div>
+      <div class="conn-arrow">
+        <svg viewBox="0 0 12 12"><polyline points="4,2 8,6 4,10"/></svg>
+      </div>
+    </div>`).join('');
+}
+
+async function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const txt = inp.value.trim(); if (!txt) return;
+  inp.value = '';
+
+  // Transition to chat view
+  if (S.stage === 'idle') {
+    document.getElementById('conn-idle').style.display = 'none';
+    const chatEl = document.getElementById('chat-messages');
+    chatEl.style.display = 'flex';
+    chatEl.style.flexDirection = 'column';
+  }
+
+  addMsg('user', esc(txt));
+  S._chatHistory.push({role:'user', content:txt});
+
+  const claudeKey = localStorage.getItem('ce_claude_key') || '';
+  const typingId = 'typing-' + Date.now();
+  addTypingIndicator(typingId);
+
+  try {
+    const resp = await api('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        message: txt,
+        history: S._chatHistory.slice(-12),
+        connector: S.connector || '',
+        claude_key: claudeKey,
+      })
+    });
+    removeTypingIndicator(typingId);
+    const reply = resp.reply || '';
+    S._chatHistory.push({role:'assistant', content:reply});
+
+    if (resp.action?.type === 'build_ready') {
+      addMsgWithBuildCard(reply, resp.action.data);
+    } else if (resp.action?.type === 'credential_ready') {
+      addMsgWithCredCard(reply, resp.action.data.connector, resp.action.data.credential, resp.action.data.url || '');
+    } else {
+      addMsg('bot', renderMarkdown(reply));
+      // Do NOT auto-trigger builds from URL detection here — the AI controls
+      // the flow and will emit BUILD_READY only after collecting all required info.
+    }
+  } catch(e) {
+    removeTypingIndicator(typingId);
+    const k = detectConnector(txt);
+    if (k && S.stage === 'idle') {
+      await handleConnector(k, true);
+    } else {
+      addMsg('bot',
+        `I can help you build connectors for <strong>Calendly, GitHub, Salesforce, HubSpot, Slack</strong> and <strong>Stripe</strong>, or any REST API you describe.<br>` +
+        `Try: <em>"build a connector for Salesforce"</em>`);
+    }
+  }
+}
+
+/**
+ * Start a build for a custom connector using the provided docs URL.
+ * @param {string} docsUrl  - API documentation URL
+ * @param {boolean} alreadyInChatView - whether the chat view is already active
+ */
+async function startCustomBuild(docsUrl, alreadyInChatView=false) {
+  // Derive a display name from the URL's hostname
+  const hostname = (() => { try { return new URL(docsUrl).hostname.replace(/^www\.|^api\./, ''); } catch { return 'Custom API'; } })();
+  const displayName = hostname.split('.')[0].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  S.connector = displayName;
+  S._customDocsUrl = docsUrl;
+
+  if (!alreadyInChatView) {
+    document.getElementById('conn-idle').style.display = 'none';
+    const chatEl = document.getElementById('chat-messages');
+    chatEl.style.display = 'flex'; chatEl.style.flexDirection = 'column';
+  }
+
+  addMsg('bot',
+    `Building <strong>${displayName}</strong> connector from <code style="font-size:11px;background:var(--border);padding:1px 4px;border-radius:3px;">${esc(docsUrl)}</code>.<br><br>` +
+    `I'll ingest the API docs, fill every manifest field, and run 4-layer validation. ` +
+    `<a href="#" onclick="openArtifacts();return false;" style="color:var(--blue);font-weight:500;">Watch live pipeline →</a>`);
+
+  S.stage = 'building';
+  document.getElementById('chat-input-section').style.display = 'none';
+  startPipeline();
+  await doBuildCustom(docsUrl);
+}
+
+/** doBuild variant that passes the custom docs URL to the backend. */
+async function doBuildCustom(docsUrl, credential='') {
+  const ck = localStorage.getItem('ce_claude_key') || '';
+  let build_id;
+  try {
+    const res = await api('/api/build/start', {
+      method: 'POST',
+      body: JSON.stringify({connector: S.connector, credential, claude_key: ck, url: docsUrl})
+    });
+    build_id = res.build_id;
+  } catch(err) {
+    addMsg('bot', `Could not start build: ${esc(String(err.message||err))}`);
+    S.stage = 'idle';
+    document.getElementById('chat-input-section').style.display = 'block';
+    return;
+  }
+  S.buildId = build_id;
+
+  const es = new EventSource(`/api/build/${build_id}/events`);
+  es.onmessage = e => {
+    const ev = JSON.parse(e.data);
+    if (ev.type === 'ping') return;
+    handleBuildEvent(ev, es);
+  };
+  es.onerror = () => { addMsg('bot', 'Connection lost during build.'); es.close(); };
+}
+
+/**
+ * Show a rich "ready to build" summary card after the chat assistant has
+ * collected all connector details. The card summarises everything and lets
+ * the user click "Start Building" to kick off the pipeline.
+ */
+function addMsgWithBuildCard(replyText, data) {
+  const wrap = document.getElementById('chat-messages');
+  if (!wrap.style.display || wrap.style.display === 'none') {
+    wrap.style.display = 'flex'; wrap.style.flexDirection = 'column';
+  }
+
+  const cardId = 'bc-' + Date.now();
+  const streams = (data.streams || []).map(s => {
+    const paramStr = s.params && Object.keys(s.params).length
+      ? ' (' + Object.entries(s.params).map(([k,v])=>`${k}=${v}`).join(', ') + ')'
+      : '';
+    return `<li style="color:var(--t2);">${esc(s.name)}${esc(paramStr)}</li>`;
+  }).join('');
+
+  const authDesc = data.auth_type === 'none'
+    ? 'No auth'
+    : `${esc(data.auth_type)} via ${esc(data.auth_in === 'query' ? 'query param' : 'header')} <code style="font-size:10px;background:var(--border);padding:1px 4px;border-radius:3px;">${esc(data.auth_param_name||'')}</code>`;
+
+  const div = document.createElement('div');
+  div.className = 'msg-row';
+  div.innerHTML = `
+    <div class="bot-icon"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#2563EB"/><circle cx="16" cy="16" r="7" fill="white"/></svg></div>
+    <div class="bubble bubble-bot">
+      ${replyText ? `<div style="margin-bottom:10px;">${renderMarkdown(replyText)}</div>` : ''}
+      <div class="cred-card" id="${cardId}" style="gap:10px;">
+        <div class="cred-card-title" style="margin-bottom:4px;">
+          <svg viewBox="0 0 16 16"><rect x="2" y="7" width="12" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+          Connector ready to build
+        </div>
+        <div style="font-size:12px;display:grid;gap:4px;color:var(--t2);">
+          <div><span style="color:var(--t3);min-width:72px;display:inline-block;">Connector</span> <strong style="color:var(--t1);">${esc(data.connector)}</strong></div>
+          <div><span style="color:var(--t3);min-width:72px;display:inline-block;">Base URL</span> <span style="color:var(--t1);">${esc(data.base_url||data.url||'')}</span></div>
+          <div><span style="color:var(--t3);min-width:72px;display:inline-block;">Auth</span> ${authDesc}</div>
+          ${streams ? `<div><span style="color:var(--t3);min-width:72px;display:inline-block;">Streams</span><ul style="margin:2px 0 0 12px;padding:0;list-style:disc;">${streams}</ul></div>` : ''}
+        </div>
+        <button class="btn btn-primary" style="margin-top:6px;" onclick="startFromBuildCard('${cardId}')">
+          Start Building ↗
+        </button>
+      </div>
+    </div>`;
+  wrap.appendChild(div);
+  document.getElementById('builder-body').scrollTop = 9999;
+  // Store build data so startFromBuildCard can access it
+  wrap._buildData = wrap._buildData || {};
+  wrap._buildData[cardId] = data;
+}
+
+async function startFromBuildCard(cardId) {
+  const wrap = document.getElementById('chat-messages');
+  const data = (wrap._buildData || {})[cardId];
+  if (!data) { addMsg('bot', 'Build data lost — please restart the conversation.'); return; }
+
+  const card = document.getElementById(cardId);
+  if (card) card.style.opacity = '0.5';
+
+  S.connector = data.connector;
+  S._customDocsUrl = data.url || '';
+  // Persist credential from chat so the Sync tab is pre-filled — user shouldn't have to re-enter it
+  if (data.credential && data.connector) {
+    localStorage.setItem(`ce_cred_${data.connector}`, data.credential);
+    S._creds[data.connector] = data.credential;
+  }
+  addMsg('bot', `Starting pipeline for <strong>${esc(data.connector)}</strong>… <a href="#" onclick="openArtifacts();return false;" style="color:var(--blue);font-weight:500;">Watch live pipeline →</a>`);
+  S.stage = 'building';
+  document.getElementById('chat-input-section').style.display = 'none';
+  startPipeline();
+
+  const ck = localStorage.getItem('ce_claude_key') || '';
+  let build_id;
+  try {
+    const res = await api('/api/build/start', {
+      method: 'POST',
+      body: JSON.stringify({
+        connector:        data.connector,
+        credential:       data.credential || '',
+        claude_key:       ck,
+        url:              data.url || '',
+        base_url_override: data.base_url || '',
+        auth_type:        data.auth_type || '',
+        auth_in:          data.auth_in || 'header',
+        auth_param_name:  data.auth_param_name || '',
+        streams_override: data.streams || [],
+      })
+    });
+    build_id = res.build_id;
+  } catch(err) {
+    addMsg('bot', `Could not start build: ${esc(String(err.message||err))}`);
+    S.stage = 'idle';
+    document.getElementById('chat-input-section').style.display = 'block';
+    return;
+  }
+  S.buildId = build_id;
+
+  const es = new EventSource(`/api/build/${build_id}/events`);
+  es.onmessage = e => {
+    const ev = JSON.parse(e.data);
+    if (ev.type === 'ping') return;
+    handleBuildEvent(ev, es);
+  };
+  es.onerror = () => es.close();
+}
+
+function addMsgWithCredCard(replyText, connectorName, credentialValue, docsUrl='') {
+  const wrap = document.getElementById('chat-messages');
+  if (!wrap.style.display || wrap.style.display === 'none') {
+    wrap.style.display = 'flex'; wrap.style.flexDirection = 'column';
+  }
+  const cardId = 'cc-' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'msg-row';
+  div.innerHTML = `<div class="bot-icon"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#2563EB"/><circle cx="16" cy="16" r="7" fill="white"/></svg></div>
+    <div class="bubble bubble-bot">
+      <div>${renderMarkdown(replyText)}</div>
+      <div class="cred-card" id="${cardId}">
+        <div class="cred-card-title">
+          <svg viewBox="0 0 16 16"><rect x="2" y="7" width="12" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+          Credential ready — confirm to start building
+        </div>
+        <div class="cred-card-input">
+          <input type="password" id="${cardId}-tok" value="${ea(credentialValue)}" placeholder="API credential" style="font-family:'JetBrains Mono',monospace;">
+          <button class="btn btn-primary" onclick="startFromCredCard('${ea(connectorName)}','${cardId}-tok','${ea(docsUrl)}')">
+            Build ↗
+          </button>
+        </div>
+      </div>
+    </div>`;
+  wrap.appendChild(div);
+  document.getElementById('builder-body').scrollTop = 9999;
+}
+
+async function startFromCredCard(connectorName, inputId, docsUrl='') {
+  const tok    = document.getElementById(inputId)?.value || '';
+  // Disable the card inputs so the user can't re-submit
+  const cardId = inputId.replace(/-tok$/, '');
+  const card   = document.getElementById(cardId);
+  if (card) card.style.opacity = '0.5';
+  S.connector = connectorName;
+  addMsg('bot', `Starting pipeline for <strong>${esc(connectorName)}</strong>… <a href="#" onclick="openArtifacts();return false;" style="color:var(--blue);font-weight:500;">Watch live pipeline →</a>`);
+  S.stage = 'building';
+  document.getElementById('chat-input-section').style.display = 'none';
+  startPipeline();
+  const claudeKey = localStorage.getItem('ce_claude_key') || '';
+  // If the connector isn't in the built-in list, use doBuildCustom with the docs URL
+  const isBuiltIn = Object.values(CONNECTORS).some(c => c.display === connectorName);
+  if (!isBuiltIn) {
+    if (docsUrl) {
+      S._customDocsUrl = docsUrl;
+      await doBuildCustom(docsUrl, tok);
+    } else {
+      // No docs URL — ask the user to provide one
+      S.stage = 'idle';
+      document.getElementById('chat-input-section').style.display = 'block';
+      addMsg('bot',
+        `To build the <strong>${esc(connectorName)}</strong> connector, I need the API documentation URL.<br>` +
+        `Please paste it in the chat (e.g. <code style="font-size:11px;background:var(--border);padding:1px 4px;border-radius:3px;">https://docs.example.com/api</code>).`);
+    }
+  } else {
+    await doBuild(tok, claudeKey);
+  }
+}
+
+async function handleConnector(key, alreadyInChatView=false) {
+  const cfg = CONNECTORS[key];
+
+  // Transition to chat view (hide idle grid if not already done by sendChat)
+  if (!alreadyInChatView) {
+    document.getElementById('conn-idle').style.display = 'none';
+    const chatEl = document.getElementById('chat-messages');
+    chatEl.style.display = 'flex';
+    chatEl.style.flexDirection = 'column';
+  }
+
+  S.connector = cfg.display;
+  if (!alreadyInChatView) addMsg('user', `Build a connector for ${cfg.display}`);
+  addMsg('bot',
+    `Building <strong>${cfg.display}</strong> connector.<br><br>` +
+    `I'll fetch the API docs, fill every manifest field with AI-grounded citations, and run 4-layer validation. ` +
+    `<a href="#" onclick="openArtifacts();return false;" style="color:var(--blue);font-weight:500;">Watch live pipeline →</a>`);
+
+  if (cfg.needsAuth) {
+    S.stage = 'need_token';
+    document.getElementById('token-label').textContent = `${cfg.display} API credentials`;
+    document.getElementById('token-section').style.display = 'block';
+    document.getElementById('chat-input-section').style.display = 'none';
+  } else {
+    S.stage = 'building';
+    document.getElementById('chat-input-section').style.display = 'none';
+    startPipeline();
+    await doBuild('', '');
+  }
+}
+
+function submitToken() {
+  const tok = document.getElementById('api-token-input').value.trim();
+  document.getElementById('token-section').style.display = 'none';
+  addMsg('user', tok ? 'Credentials provided' : 'Skipped — using mock data');
+  addMsg('bot', `Starting pipeline now. <a href="#" onclick="openArtifacts();return false;" style="color:var(--blue);font-weight:500;">Watch live pipeline →</a>`);
+  S.stage = 'building';
+  startPipeline();
+  doBuild(tok, '');
+}
+
+function resetBuilder() {
+  S.stage='idle'; S.connector=null; S.buildId=null;
+  S.stepStatus=['waiting','waiting','waiting','waiting'];
+  S.stepLogs=[[],[],[],[]]; S.stepSummary=['','','','']; S._chatHistory=[];
+
+  // Restore idle layout
+  const chatEl = document.getElementById('chat-messages');
+  chatEl.innerHTML=''; chatEl.style.display='none';
+  document.getElementById('conn-idle').style.display='block';
+  document.getElementById('token-section').style.display='none';
+  document.getElementById('review-section').style.display='none';
+  document.getElementById('chat-input-section').style.display='block';
+
+  // Close artifacts panel
+  document.getElementById('artifacts-panel').classList.remove('open');
+  const btn = document.getElementById('artifacts-btn');
+  btn.style.display='none';
+  document.getElementById('artifacts-btn-label').textContent='Pipeline';
+
+  // Reset artifacts content
+  const pct = document.getElementById('pipeline-pct');
+  pct.style.display='none'; pct.textContent='0%';
+  document.getElementById('pipeline-explainer').style.display='flex';
+  document.getElementById('pipeline-steps').style.display='none';
+  document.getElementById('pipeline-steps').innerHTML='';
+  document.getElementById('fields-section').style.display='none';
+  document.getElementById('records-section').style.display='none';
+  document.getElementById('fields-tbody').innerHTML='';
+  document.getElementById('records-wrap').innerHTML='';
+}
+
+// ─────────────────────────────────────────
+// PIPELINE
+// ─────────────────────────────────────────
+function startPipeline() {
+  S.stepStatus=['waiting','waiting','waiting','waiting'];
+  S.stepLogs=[[],[],[],[]]; S.stepSummary=['','','',''];
+
+  // Open artifacts panel and show pipeline button
+  openArtifacts();
+  const btn = document.getElementById('artifacts-btn');
+  btn.style.display='flex';
+
+  // Show pipeline steps, hide explainer
+  document.getElementById('pipeline-explainer').style.display='none';
+  const pct = document.getElementById('pipeline-pct');
+  pct.style.display='inline-block';
+  const stepsEl = document.getElementById('pipeline-steps');
+  stepsEl.style.display='flex';
+  stepsEl.innerHTML = STEPS.map((_,i)=>stepCard(i)).join('');
+  updateProgress();
+}
+
+function stepCard(i) {
+  const st   = S.stepStatus[i];
+  const logs = S.stepLogs[i];
+  const sum  = S.stepSummary[i];
+  const numEl= {waiting:i+1, running:'●', done:'✓', error:'✗'}[st];
+  const pillMap = {
+    waiting:`<span class="pill pill-gray">Waiting</span>`,
+    running:`<span class="pill pill-blue pulse">Running</span>`,
+    done:   `<span class="pill pill-green">Done</span>`,
+    error:  `<span class="pill pill-red">Failed</span>`,
+  };
+  return `<div class="step-card ${st}" id="step-${i}">
+    <div class="step-row">
+      <div class="step-n ${st}">${numEl}</div>
+      <div class="step-info">
+        <div class="step-title${st==='waiting'?' dim':''}">${STEPS[i].title}</div>
+        ${!sum ? `<div class="step-sub">${STEPS[i].sub}</div>` : ''}
+      </div>
+      ${pillMap[st]||''}
+    </div>
+    ${st==='running'?`<div class="step-prog"><div class="step-prog-inner pulse" style="width:55%"></div></div>`:''}
+    ${sum?`<div class="step-body"><div class="step-sum">${esc(sum)}</div></div>`:''}
+    ${logs.length?`<div class="step-body" style="${sum?'padding-top:0':''}">
+      <div class="step-logs">${logs.slice(-30).map(l=>{
+        const cls=l.lv==='success'?'log-ok':l.lv==='error'?'log-err':l.lv==='warning'?'log-warn':'';
+        const ic={success:'✓',error:'✗',warning:'⚠',info:'›'}[l.lv]||'›';
+        return `<div class="log-line ${cls}">${ic} ${esc(l.msg)}</div>`;
+      }).join('')}</div>
+    </div>`:''}
+  </div>`;
+}
+
+function refreshStep(i) {
+  const old = document.getElementById(`step-${i}`);
+  if (old) old.outerHTML = stepCard(i);
+}
+
+function updateProgress() {
+  const done    = S.stepStatus.filter(s=>s==='done').length;
+  const running = S.stepStatus.includes('running') ? 1 : 0;
+  const pct     = Math.round(((done + running*0.5)/4)*100);
+  const el = document.getElementById('pipeline-pct');
+  if (el) el.textContent = pct+'%';
+  // Update topbar button label
+  const lbl = document.getElementById('artifacts-btn-label');
+  if (lbl) lbl.textContent = `Pipeline · ${pct}%`;
+}
+
+// ─────────────────────────────────────────
+// BUILD — SSE
+// ─────────────────────────────────────────
+/**
+ * Shared SSE event handler for all build streams.
+ * Called by doBuild and doBuildCustom.
+ */
+function handleBuildEvent(ev, es) {
+  if (ev.type === 'step_start') {
+    S.stepStatus[ev.step] = 'running';
+    refreshStep(ev.step); updateProgress();
+  } else if (ev.type === 'log') {
+    S.stepLogs[ev.step].push({lv: ev.level, msg: ev.msg});
+    refreshStep(ev.step);
+  } else if (ev.type === 'step_done') {
+    S.stepStatus[ev.step] = 'done';
+    S.stepSummary[ev.step] = ev.summary;
+    refreshStep(ev.step); updateProgress();
+  } else if (ev.type === 'field_row') {
+    const fs = document.getElementById('fields-section');
+    // Position fields section after the AI Manifest Fill step card (step index 1)
+    if (fs.style.display === 'none') {
+      fs.style.display = 'block';
+      const step1 = document.getElementById('step-1');
+      if (step1) step1.insertAdjacentElement('afterend', fs);
+    }
+    const confColor = {high:'var(--green)',medium:'var(--amber)',low:'var(--red)'};
+    const confDot = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${confColor[ev.row.confidence]||'var(--t3)'};margin-right:4px;vertical-align:middle;"></span>`;
+    const tbody = document.getElementById('fields-tbody');
+    const item = document.createElement('div');
+    item.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px 11px;';
+    item.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px;">
+        <code style="font-size:11px;color:var(--blue);font-weight:600;">${esc(ev.row.field)}</code>
+        <span style="font-size:10px;color:var(--t3);white-space:nowrap;">${confDot}${ev.row.confidence}</span>
+      </div>
+      <div style="font-size:12px;color:var(--t1);font-family:'JetBrains Mono',monospace;margin-bottom:3px;word-break:break-all;">${esc(String(ev.row.value))}</div>
+      ${ev.row.citation ? `<div style="font-size:11px;color:var(--t3);font-style:italic;">"${esc(ev.row.citation)}"</div>` : ''}`;
+    tbody.appendChild(item);
+    // Update field count label
+    const lbl = document.getElementById('fields-count-label');
+    if (lbl) lbl.textContent = `${tbody.children.length} fields extracted`;
+  } else if (ev.type === 'connector_docs') {
+    renderApiDocs(ev.docs);
+  } else if (ev.type === 'review_ready') {
+    S.stepStatus[3] = 'running'; S.stepSummary[3] = 'Waiting for your approval';
+    refreshStep(3); updateProgress();
+    if (ev.records_sample?.length) {
+      document.getElementById('records-section').style.display = 'block';
+      const cols = Object.keys(ev.records_sample[0] || {});
+      renderTable(cols, ev.records_sample.map(r => cols.map(c => r[c])), document.getElementById('records-wrap'));
+    }
+    document.getElementById('review-section').style.display = 'block';
+    addMsg('bot',
+      `All 4 validation layers passed. The <strong>${S.connector}</strong> manifest is ready for review.<br><br>` +
+      `<a href="#" onclick="openArtifacts();return false;" style="color:var(--blue);font-weight:500;">View pipeline artifacts →</a>`);
+    es.close();
+  } else if (ev.type === 'error') {
+    addMsg('bot', `Build error: ${esc(ev.msg)}`); es.close();
+  }
+}
+
+async function doBuild(credential, claudeKey) {
+  const ck = claudeKey || localStorage.getItem('ce_claude_key') || '';
+  let build_id;
+  try {
+    const res = await api('/api/build/start', {
+      method: 'POST',
+      body: JSON.stringify({connector: S.connector, credential, claude_key: ck})
+    });
+    build_id = res.build_id;
+  } catch(err) {
+    addMsg('bot', `Could not start build: ${esc(String(err.message || err))}`);
+    S.stage = 'idle';
+    document.getElementById('chat-input-section').style.display = 'block';
+    return;
+  }
+  S.buildId = build_id;
+
+  const es = new EventSource(`/api/build/${build_id}/events`);
+  es.onmessage = e => {
+    const ev = JSON.parse(e.data);
+    if (ev.type === 'ping') return;
+    handleBuildEvent(ev, es);
+  };
+  es.onerror = () => es.close();
+}
+
+async function approveBuild() {
+  const approveBtn = document.querySelector('[onclick="approveBuild()"]');
+  if (approveBtn) { approveBtn.disabled = true; approveBtn.textContent = 'Saving…'; }
+
+  let version;
+  try {
+    const res = await api(`/api/build/${S.buildId}/approve`, {
+      method: 'POST', body: JSON.stringify({connector: S.connector})
+    });
+    version = res.version;
+  } catch(err) {
+    addMsg('bot', `Could not save connector: ${esc(String(err.message||err))}`);
+    if (approveBtn) { approveBtn.disabled = false; approveBtn.textContent = 'Approve & register'; }
+    return;
+  }
+
+  S.stepStatus[3] = 'done'; S.stepSummary[3] = 'Approved — saved to Marketplace';
+  refreshStep(3);
+  const pct = document.getElementById('pipeline-pct');
+  if (pct) pct.textContent = '100%';
+  const lbl = document.getElementById('artifacts-btn-label');
+  if (lbl) lbl.textContent = 'Pipeline · 100%';
+  document.getElementById('review-section').style.display = 'none';
+  document.getElementById('chat-input-section').style.display = 'block';
+
+  addMsg('bot',
+    `<strong>${esc(S.connector)} v${esc(version)}</strong> registered successfully.<br><br>` +
+    `<a href="#" onclick="navigate('marketplace');return false;" style="color:var(--blue);font-weight:600;">View in Marketplace →</a>`);
+
+  S.stage = 'done';
+  // Pre-fetch fresh marketplace data so it's ready when user navigates there
+  await loadMarketplace().catch(()=>{});
+  updateSidebarCount();
+  toast(`${S.connector} registered`);
+}
+
+// ─────────────────────────────────────────
+// MARKETPLACE
+// ─────────────────────────────────────────
+function calcManifestAccuracy(m) {
+  // Returns 0–100 based on how complete the manifest is
+  let score = 0;
+  if (m.base_url)                                               score += 25;
+  if (m.auth?.type && m.auth.type !== 'unknown')                score += 20;
+  const streams = m.streams || [];
+  if (streams.length > 0)                                       score += 20;
+  if (streams.every(s => s.name))                               score += 10;
+  if (streams.every(s => s.path))                               score += 15;
+  if (streams.some(s => s.record_selector && s.record_selector !== '$[*]')) score += 5;
+  if (streams.some(s => s.pagination?.strategy && s.pagination.strategy !== 'none')) score += 5;
+  return Math.min(100, score);
+}
+
+async function loadMarketplace() {
+  const data = await api('/api/connectors');
+  S._mpConnectors = data.connectors;
+  const s = data.stats;
+  // Only update DOM elements that exist (this fn may be called from non-marketplace pages)
+  const metricsEl = document.getElementById('reg-metrics');
+  if (metricsEl) {
+    const totalSyncs   = (S._mpConnectors||[]).reduce((a,c)=>a+(c.total_syncs||0),0);
+    const totalRecords = (S._mpConnectors||[]).reduce((a,c)=>a+(c.total_records||0),0);
+    const activeConns  = (S._mpConnectors||[]).filter(c=>(c.total_syncs||0)>0).length;
+    const fmtNum = n => n>=1_000_000 ? (n/1_000_000).toFixed(1)+'M' : n>=1_000 ? (n/1_000).toFixed(1)+'K' : String(n);
+    metricsEl.innerHTML = `<div class="mp-metric-grid">
+      <div class="mp-metric-card" style="border-left-color:#3B82F6;">
+        <strong>${s.total}</strong>
+        <div class="mp-metric-label">Total Connectors</div>
+        <div class="mp-metric-sub">${s.production} production · ${s.sandbox} beta</div>
+      </div>
+      <div class="mp-metric-card" style="border-left-color:#10B981;">
+        <strong>${activeConns}</strong>
+        <div class="mp-metric-label">Active Connectors</div>
+        <div class="mp-metric-sub">${s.total - activeConns} configured but never synced</div>
+      </div>
+      <div class="mp-metric-card" style="border-left-color:#8B5CF6;">
+        <strong>${fmtNum(totalSyncs)}</strong>
+        <div class="mp-metric-label">Total Sync Runs</div>
+        <div class="mp-metric-sub">Across all connectors</div>
+      </div>
+      <div class="mp-metric-card" style="border-left-color:#F59E0B;">
+        <strong>${fmtNum(totalRecords)}</strong>
+        <div class="mp-metric-label">Records Synced</div>
+        <div class="mp-metric-sub">Total records ingested</div>
+      </div>
+    </div>`;
+    renderMarketplaceSections();
+  }
+  const cntEl = document.getElementById('conn-count-sidebar');
+  if (cntEl) cntEl.textContent = s.total;
+}
+
+function setMpFilter(type, status) {
+  if (type  !== undefined) S._mpType   = type;
+  if (status !== undefined) S._mpStatus = status;
+  // Show/hide status dropdown based on type selection
+  const statusSel = document.getElementById('mp-status-sel');
+  if (statusSel) statusSel.style.display = S._mpType === 'all' ? 'none' : 'inline-block';
+  renderMarketplaceSections();
+}
+
+function renderMarketplaceSections() {
+  const connectors = S._mpConnectors || [];
+  const el = document.getElementById('reg-cards');
+  const search    = (S._mpSearch || '').toLowerCase();
+  const typeFilter   = S._mpType   || 'all';
+  const statusFilter = S._mpStatus || 'all';
+
+  // Helpers
+  const PREDEF_NAMES = new Set(Object.values(CONNECTORS).map(c => c.display.toLowerCase()));
+  const isBuiltin = c => PREDEF_NAMES.has(c.name.toLowerCase());
+  const betaPill  = `<span class="pill pill-amber">Beta</span>`;
+  const prodPill  = `<span class="pill pill-green">Production</span>`;
+  const statusPill = c => {
+    const vi = (c.versions||[{}]).slice(-1)[0];
+    return (vi.status||'sandbox') === 'production' ? prodPill : betaPill;
+  };
+
+  const makeTile = (conn, builtinFlag) => {
+    const vi      = (conn.versions||[{}]).slice(-1)[0];
+    const status  = vi.status || 'sandbox';
+    const m       = vi.manifest_dict || {};
+    const streams = (m.streams || []);
+    const acc     = calcManifestAccuracy(m);
+    const spills  = streams.slice(0,3).map(s=>`<span class="pill pill-gray">${esc(s.name||'')}</span>`).join('');
+    const sover   = streams.length > 3 ? `<span class="pill pill-gray">+${streams.length-3}</span>` : '';
+    const icon    = ICONS[conn.name.toLowerCase()] || '⬡';
+    const isProd  = status === 'production';
+
+    const dotColor = isProd ? '#10B981' : '#F59E0B';
+    const dotLabel = isProd ? 'Production' : 'Beta';
+
+    // Type tag — flex-aligned, no vertical-align hacks
+    const typeTag = builtinFlag
+      ? `<span style="font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#6B7280;background:#F3F4F6;border:1px solid #E5E7EB;border-radius:4px;padding:1px 6px;flex-shrink:0;">Inbuilt</span>`
+      : `<span style="font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#2563EB;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:4px;padding:1px 6px;flex-shrink:0;">Custom</span>`;
+
+    return `<div class="mp-ctile ${isProd?'is-production':''}">
+      <div class="mp-ctile-top">
+        <div class="mp-ctile-icon">${icon}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="mp-ctile-name" style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(conn.name)}</span>
+            ${typeTag}
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:11px;color:var(--t3);">
+            <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};flex-shrink:0;"></span>
+            <span style="color:${dotColor};font-weight:600;">${dotLabel}</span>
+            <span style="color:var(--border-md);margin:0 1px;">·</span>
+            <span>${esc(conn.auth_type||'—')}</span>
+            <span style="color:var(--border-md);margin:0 1px;">·</span>
+            <span>${streams.length} stream${streams.length!==1?'s':''}</span>
+          </div>
+        </div>
+      </div>
+      <div class="mp-ctile-streams">${spills}${sover}${!streams.length?`<span style="font-size:11px;color:var(--t3);">No streams</span>`:''}</div>
+      <div class="mp-ctile-footer">
+        <div class="mp-ctile-stat" style="font-size:11px;color:var(--t3);">
+          <strong style="font-size:14px;color:var(--t1);font-weight:700;display:block;line-height:1.2;">${conn.total_syncs||0}</strong>Syncs
+        </div>
+        <button class="btn btn-primary btn-xs" onclick="openEdit('${ea(conn.name)}')">Configure →</button>
+      </div>
+    </div>`;
+  };
+
+  // Apply search + type + status filters
+  const matchesFilter = (conn) => {
+    const vi     = (conn.versions||[{}]).slice(-1)[0];
+    const status = vi.status || 'sandbox';
+    const builtin = isBuiltin(conn);
+    if (typeFilter === 'inbuilt'  && !builtin) return false;
+    if (typeFilter === 'custom'   &&  builtin) return false;
+    if (statusFilter === 'beta'       && status !== 'sandbox')    return false;
+    if (statusFilter === 'production' && status !== 'production') return false;
+    if (search && !conn.name.toLowerCase().includes(search)) return false;
+    return true;
+  };
+
+  const filtered    = connectors.filter(matchesFilter);
+  const builtins    = filtered.filter(c =>  isBuiltin(c));
+  const customs     = filtered.filter(c => !isBuiltin(c));
+  const allBuiltins = connectors.filter(c =>  isBuiltin(c));
+  const allCustoms  = connectors.filter(c => !isBuiltin(c));
+
+  const showInbuilt = typeFilter !== 'custom';
+  const showCustom  = typeFilter !== 'inbuilt';
+
+  // Filter bar HTML
+  const filterBar = `<div class="mp-filter-bar">
+    <input type="text" placeholder="Search connectors…" value="${ea(S._mpSearch||'')}"
+      oninput="S._mpSearch=this.value;renderMarketplaceSections()">
+    <select onchange="setMpFilter(this.value, undefined)">
+      <option value="all"     ${(S._mpType||'all')==='all'    ?'selected':''}>All Types</option>
+      <option value="inbuilt" ${S._mpType==='inbuilt'         ?'selected':''}>In-built</option>
+      <option value="custom"  ${S._mpType==='custom'          ?'selected':''}>Custom</option>
+    </select>
+    <select id="mp-status-sel" style="display:${S._mpType==='all'?'none':'inline-block'}" onchange="setMpFilter(undefined, this.value)">
+      <option value="all"        ${(S._mpStatus||'all')==='all'      ?'selected':''}>All Statuses</option>
+      <option value="beta"       ${S._mpStatus==='beta'              ?'selected':''}>Beta</option>
+      <option value="production" ${S._mpStatus==='production'        ?'selected':''}>Production</option>
+    </select>
+  </div>`;
+
+  // Add custom tile
+  const addTile = `<div class="mp-add-tile" onclick="startBuildFor('Custom API')">
+    <div class="mp-add-tile-ring">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
+    </div>
+    <div class="mp-add-tile-label">Build a custom connector</div>
+    <div class="mp-add-tile-sub">Connect any REST API with AI</div>
+  </div>`;
+
+  const noResults = `<div style="padding:24px 0;font-size:13px;color:var(--t3);">No connectors match your search or filter.</div>`;
+
+  const allTiles = [
+    ...(showInbuilt ? builtins.map(c => makeTile(c, true))  : []),
+    ...(showCustom  ? customs.map(c  => makeTile(c, false)) : []),
+    ...(showCustom  ? [addTile] : []),
+  ];
+
+  el.innerHTML = filterBar + `<div class="mp-conn-grid" style="margin-top:8px;">
+    ${allTiles.length > (showCustom ? 1 : 0) ? allTiles.join('') : noResults}
+  </div>`;
+}
+
+async function promoteConn(name) {
+  await api(`/api/connectors/${encodeURIComponent(name)}/promote`, {method:'POST'});
+  toast(`${name} published to production`);
+  loadMarketplace();
+  const c = await api(`/api/connectors/${encodeURIComponent(name)}`);
+  const vi = (c.versions||[{}]).slice(-1)[0];
+  renderEditPage(c, vi);
+}
+
+async function unpublishConn(name) {
+  await api(`/api/connectors/${encodeURIComponent(name)}/demote`, {method:'POST'});
+  toast(`${name} moved back to Beta`);
+  loadMarketplace();
+  const c = await api(`/api/connectors/${encodeURIComponent(name)}`);
+  const vi = (c.versions||[{}]).slice(-1)[0];
+  renderEditPage(c, vi);
+}
+
+function deleteConn(name) {
+  document.getElementById('delete-modal-name').textContent = name;
+  document.getElementById('delete-modal-confirm').onclick = async () => {
+    closeDeleteModal();
+    await api(`/api/connectors/${encodeURIComponent(name)}`, {method:'DELETE'});
+    toast(`${name} deleted`);
+    navigate('marketplace');
+    loadMarketplace();
+    updateSidebarCount();
+  };
+  document.getElementById('delete-modal').classList.add('open');
+}
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('open');
+}
+
+function startBuildFor(name) {
+  navigate('builder');
+  if (name === 'Custom API') {
+    // For custom connectors, show a URL prompt so the user can provide docs
+    document.getElementById('conn-idle').style.display = 'none';
+    const chatEl = document.getElementById('chat-messages');
+    chatEl.style.display = 'flex';
+    chatEl.style.flexDirection = 'column';
+    addMsg('bot',
+      `To build a custom connector, I need the API documentation URL.<br><br>` +
+      `Paste the URL below (e.g. <code style="font-size:11px;background:var(--border);padding:1px 4px;border-radius:3px;">https://api.example.com/docs</code>) ` +
+      `and I'll ingest the docs and build the manifest automatically.`);
+    // Pre-fill the chat input for convenience
+    const inp = document.getElementById('chat-input');
+    if (inp) { inp.focus(); inp.placeholder = 'Paste docs URL, e.g. https://api.example.com/docs'; }
+  } else {
+    // Known connector — detect key and start pipeline
+    const key = Object.keys(CONNECTORS).find(k =>
+      CONNECTORS[k].display.toLowerCase() === name.toLowerCase()
+    );
+    if (key) handleConnector(key);
+  }
+}
+
+// ─────────────────────────────────────────
+// CONFIGURE (EDIT)
+// ─────────────────────────────────────────
+async function openEditTab(name, tab) {
+  await openEdit(name);
+  switchEditTab(tab);
+}
+
+async function openEdit(name) {
+  // Show edit page, keep Marketplace highlighted in sidebar
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-edit').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.page==='marketplace'));
+  setBreadcrumb('Marketplace', name);
+
+  const conn = await api(`/api/connectors/${encodeURIComponent(name)}`);
+  S.editConn = name;
+  const vi = (conn.versions||[{}]).slice(-1)[0];
+  S.editManifest = JSON.parse(JSON.stringify(vi.manifest_dict||conn.manifest||{}));
+  S._editConn = conn;
+  S._editVi   = vi;
+  S.editDirty = false;
+  // Restore persisted credential from localStorage
+  const savedCred = localStorage.getItem(`ce_cred_${name}`) || '';
+  if (savedCred) S._creds[name] = savedCred;
+  renderEditPage(conn, vi);
+  // Pre-fill the sync-cred input after render
+  const syncCredEl = document.getElementById('sync-cred');
+  if (syncCredEl) syncCredEl.value = savedCred || S._creds[name] || '';
+}
+
+function renderEditPage(conn, vi) {
+  const m = S.editManifest;
+  const status = vi.status||'sandbox';
+  const icon = ICONS[conn.name.toLowerCase()]||'⬡';
+  const streams = m.streams||[];
+  const isBuiltIn = Object.values(CONNECTORS).some(c => c.display === conn.name);
+  const statusPill = status==='production'
+    ? `<span class="pill pill-green">Production</span>`
+    : `<span class="pill pill-amber">Beta</span>`;
+  const strats = ['none','cursor','link_header','offset'];
+
+  const methods = ['GET','POST'];
+  const streamRows = streams.map((s,i) => {
+    const pag = s.pagination||{}, params = s.params||{};
+    const method = s.method || 'GET';
+    const methodColor = method==='GET'?'var(--green)':method==='POST'?'var(--blue)':method==='DELETE'?'var(--red)':'var(--amber)';
+    return `<div class="stream-item">
+      <div class="stream-item-row" onclick="toggleStreamExpand(${i})">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <span style="font-size:10px;font-weight:700;color:${methodColor};background:var(--bg);border:1px solid var(--border);padding:0 5px;border-radius:3px;flex-shrink:0;">${esc(method)}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--t1);">${esc(s.name||`stream_${i}`)}</span>
+        </div>
+        <div class="mono" style="font-size:11px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.path||'')}</div>
+        <div><span class="pill pill-gray">${esc(pag.strategy||'none')}</span></div>
+        <div class="mono" style="font-size:11px;color:var(--t3);">${esc(s.primary_key||'—')}</div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button class="btn btn-xs" style="color:var(--red);background:transparent;border:1px solid var(--border);padding:0 8px;display:flex;align-items:center;gap:4px;font-size:11px;" onclick="event.stopPropagation();deleteStream(${i})" title="Remove stream">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            Delete
+          </button>
+          <div class="stream-arrow" id="stream-arrow-${i}">▶</div>
+        </div>
+      </div>
+      <div class="stream-item-expand" id="stream-detail-${i}">
+        <div style="display:grid;grid-template-columns:100px 1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div><label>Method</label>
+            <select id="ef-s${i}-method" onchange="markDirty()" style="font-weight:600;">
+              ${methods.map(m=>`<option${m===method?' selected':''}>${m}</option>`).join('')}
+            </select></div>
+          <div><label>Stream name</label><input id="ef-s${i}-name" value="${ea(s.name||'')}" oninput="markDirty()"></div>
+          <div><label>API path</label><input id="ef-s${i}-path" value="${ea(s.path||'')}" oninput="markDirty();probeStreamDebounced(${i})"></div>
+          <div><label>Record selector</label><input id="ef-s${i}-sel" value="${ea(s.record_selector||'$[*]')}" oninput="markDirty()"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:160px 1fr;gap:14px;">
+          <div><label>Pagination</label>
+            <select id="ef-s${i}-pag" onchange="markDirty()">
+              ${strats.map(t=>`<option ${(pag.strategy||'none')===t?'selected':''}>${t}</option>`).join('')}
+            </select></div>
+          <div><label>Static params (JSON)</label>
+            <textarea id="ef-s${i}-params" rows="2" oninput="markDirty()" class="mono" style="font-size:12px;">${esc(JSON.stringify(params,null,2))}</textarea></div>
+        </div>
+        <div id="stream-probe-${i}" style="margin-top:10px;"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('edit-content').innerHTML = `
+  <!-- Sticky header -->
+  <div class="cfg-header">
+    <div class="cfg-top">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="btn btn-ghost btn-sm" onclick="navigate('marketplace')" style="padding:0 8px;gap:4px;flex-shrink:0;">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><polyline points="8,2 4,6 8,10"/></svg>
+          Marketplace
+        </button>
+        <span style="color:var(--border-md);">/</span>
+        <div class="cfg-conn-info">
+          <div class="cfg-icon">${icon}</div>
+          <div>
+            <div class="cfg-name">${esc(conn.name)}</div>
+            <div class="cfg-meta">
+              ${statusPill}
+              <span style="font-size:11px;color:var(--t3);">v${esc(conn.current_version)}</span>
+              <span style="color:var(--border-md);">·</span>
+              <span style="font-size:11px;color:var(--t3);">${Math.round((vi.field_accuracy||0)*100)}% accuracy</span>
+              <span style="color:var(--border-md);">·</span>
+              <span style="font-size:11px;color:var(--t3);">${streams.length} stream${streams.length!==1?'s':''}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="dirty-pill" style="display:none;" class="pill pill-amber">Unsaved changes</span>
+        <button id="save-btn" class="btn btn-primary btn-sm" disabled onclick="saveEdit()" style="opacity:.35;cursor:not-allowed;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save changes
+        </button>
+        ${!isBuiltIn && status !== 'production' ? `<button class="btn btn-sm" style="background:#10B981;color:#fff;border-color:#10B981;" onclick="promoteConn('${ea(conn.name)}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          Publish
+        </button>` : ''}
+        ${!isBuiltIn && status === 'production' ? `<button class="btn btn-sm" style="background:var(--amber);color:#fff;border-color:var(--amber);" onclick="unpublishConn('${ea(conn.name)}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          Unpublish
+        </button>` : ''}
+        ${!isBuiltIn ? `<button class="btn btn-sm" style="background:var(--red);color:#fff;border-color:var(--red);" onclick="deleteConn('${ea(conn.name)}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          Delete
+        </button>` : ''}
+      </div>
+    </div>
+    <div class="cfg-tabs">
+      <div class="cfg-tab active" id="etab-settings" onclick="switchEditTab('settings')">Connection</div>
+      <div class="cfg-tab"        id="etab-sync"     onclick="switchEditTab('sync')">Sync</div>
+      <div class="cfg-tab"        id="etab-docs"     onclick="switchEditTab('docs')">Docs</div>
+      <div class="cfg-tab"        id="etab-manifest" onclick="switchEditTab('manifest')">Manifest</div>
+    </div>
+  </div>
+
+  <!-- Tab bodies -->
+  <div class="cfg-body">
+
+    <!-- ── SETTINGS tab ── -->
+    <div id="etab-settings-body">
+      <div class="form-section">
+        <div class="form-section-head"><div class="form-section-title">Connection</div></div>
+        <div class="form-section-body">
+          <div style="margin-bottom:14px;">
+            <label>Connector display name</label>
+            <input id="ef-name" value="${ea(m.name||conn.name)}" oninput="markDirty()" placeholder="e.g. OpenWeatherMap" style="font-size:14px;font-weight:600;">
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;">
+            <div><label>Base URL</label><input id="ef-base_url" value="${ea(m.base_url||'')}" oninput="markDirty()" placeholder="https://api.example.com"></div>
+            <div><label>Version</label><input id="ef-version" value="${ea(m.version||'1.0')}" oninput="markDirty()"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-head"><div class="form-section-title">Authentication</div></div>
+        <div class="form-section-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
+            <div><label>Auth type</label>
+              <select id="ef-auth_type" onchange="markDirty()">
+                ${['none','bearer','api_key','basic','oauth2'].map(t=>`<option ${(m.auth?.type||'none')===t?'selected':''}>${t}</option>`).join('')}
+              </select></div>
+            <div><label>Header name</label><input id="ef-auth_header" value="${ea(m.auth?.header_name||'X-API-Key')}" oninput="markDirty()"></div>
+            <div><label>API token <span style="font-weight:400;color:var(--t3);">(session only)</span></label>
+              <input id="ef-cred" type="password" placeholder="Paste token for test &amp; sync"
+                value="${ea(S._creds[S.editConn]||localStorage.getItem('ce_cred_'+S.editConn)||'')}"
+                oninput="onSyncCredChange(this.value)"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-head">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="form-section-title">Streams</div>
+            <span class="pill pill-gray">${streams.length} stream${streams.length!==1?'s':''}</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-secondary btn-xs" onclick="discoverStreams()" id="discover-btn">⟳ Discover</button>
+            <button class="btn btn-secondary btn-xs" onclick="addStream()">+ Add stream</button>
+          </div>
+        </div>
+        ${streams.length ? `
+        <div class="stream-tbl-head">
+          <span>Name &amp; method</span><span>Path</span><span>Pagination</span><span>Primary key</span><span></span>
+        </div>
+        ${streamRows}` : `<div style="padding:20px;font-size:13px;color:var(--t3);text-align:center;">No streams configured</div>`}
+        <div id="discover-panel" style="display:none;border-top:1px solid var(--border);"></div>
+      </div>
+
+
+    </div>
+
+    <!-- ── SYNC tab ── -->
+    <div id="etab-sync-body" style="display:none;">
+
+      <!-- Test connection -->
+      <div class="form-section" style="margin-bottom:8px;">
+        <div class="form-section-head" style="justify-content:space-between;">
+          <div class="form-section-title">Test connection</div>
+          <button class="btn btn-primary btn-xs" onclick="runTest()" style="display:flex;align-items:center;gap:5px;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Run test
+          </button>
+        </div>
+        <div style="overflow:hidden;">
+          <div id="test-results" style="padding:14px 16px;font-size:13px;color:var(--t3);">Tests the base URL and first 3 endpoints using your credential from the Connection tab.</div>
+        </div>
+      </div>
+
+      <!-- Sync panel: Log | Checkpoints (Incremental only) | History -->
+      <div class="form-section" style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;background:var(--bg);border-bottom:1px solid var(--border);padding:0 4px;">
+          <button class="sync-inner-tab active" id="sinntab-log"          onclick="switchSyncInnerTab('log')">Sync log</button>
+          <button class="sync-inner-tab"         id="sinntab-checkpoints" onclick="switchSyncInnerTab('checkpoints')" style="display:none;">Checkpoints</button>
+          <button class="sync-inner-tab"         id="sinntab-history"     onclick="switchSyncInnerTab('history')">History</button>
+          <div style="flex:1;"></div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 8px;">
+            <select id="ef-sync_mode" onchange="onSyncModeChange()"
+              style="height:26px;font-size:12px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t1);">
+              <option value="full_refresh">Full Scan</option>
+              <option value="incremental">Incremental</option>
+            </select>
+            <button class="btn btn-primary btn-xs" onclick="runSync()" style="display:flex;align-items:center;gap:5px;">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Run Sync
+            </button>
+          </div>
+        </div>
+
+        <!-- Sync log tab -->
+        <div id="sinntab-log-body">
+          <div id="sync-log-empty" style="padding:20px 16px;font-size:13px;color:var(--t3);">No sync run yet. Choose a mode and click Run Sync.</div>
+          <div id="sync-log" style="display:none;background:var(--surface);border-top:1px solid var(--border);padding:10px 14px;max-height:280px;overflow-y:auto;font-size:12px;font-family:'JetBrains Mono',monospace;line-height:1.85;"></div>
+        </div>
+
+        <!-- Checkpoints tab (only shown for Incremental) -->
+        <div id="sinntab-checkpoints-body" style="display:none;">
+          <div id="edit-checkpoints" style="padding:0;"></div>
+        </div>
+
+        <!-- History tab -->
+        <div id="sinntab-history-body" style="display:none;">
+          <div id="edit-sync-history" style="padding:0;"></div>
+        </div>
+      </div>
+
+      <!-- Debug panel: Preview · Request · Response · Schema · State -->
+      <div class="form-section">
+        <div style="display:flex;align-items:center;background:var(--bg);border-bottom:1px solid var(--border);padding:0 4px;">
+          <button class="sync-inner-tab active" id="debtab-preview"  onclick="switchDebugTab('preview')">Preview</button>
+          <button class="sync-inner-tab"        id="debtab-request"  onclick="switchDebugTab('request')">Request</button>
+          <button class="sync-inner-tab"        id="debtab-response" onclick="switchDebugTab('response')">Response</button>
+          <button class="sync-inner-tab"        id="debtab-schema"   onclick="switchDebugTab('schema')">Schema</button>
+          <button class="sync-inner-tab"        id="debtab-state"    onclick="switchDebugTab('state')">State</button>
+          <div style="flex:1;"></div>
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 8px;">
+            <select id="sync-preview-stream" onchange="switchDebugTab(S._debugTab||'preview')"
+              style="height:26px;font-size:12px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--t1);max-width:160px;"></select>
+            <button class="btn btn-primary btn-xs" onclick="switchDebugTab(S._debugTab||'preview')">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="debtab-preview-body"><div id="debug-preview-content" style="padding:14px 16px;font-size:13px;color:var(--t3);">Run a sync first, then refresh to preview records.</div></div>
+        <div id="debtab-request-body"  style="display:none;"><div id="debug-request-content"  style="padding:14px 16px;font-size:13px;color:var(--t3);">Run a sync to capture the last HTTP request.</div></div>
+        <div id="debtab-response-body" style="display:none;"><div id="debug-response-content" style="padding:14px 16px;font-size:13px;color:var(--t3);">Run a sync to capture the last HTTP response.</div></div>
+        <div id="debtab-schema-body"   style="display:none;"><div id="debug-schema-content"   style="padding:14px 16px;font-size:13px;color:var(--t3);">Run a sync first to inspect the schema.</div></div>
+        <div id="debtab-state-body"    style="display:none;"><div id="debug-state-content"    style="padding:14px 16px;font-size:13px;color:var(--t3);">No state saved yet. Run an Incremental sync to capture cursor state.</div></div>
+      </div>
+
+    </div>
+
+    <!-- ── DOCS tab ── -->
+    <div id="etab-docs-body" style="display:none;">
+      <div id="edit-docs-content">
+        <div class="empty" style="padding-top:48px;">
+          <div class="empty-icon">📄</div>
+          <div class="empty-title">API Documentation</div>
+          <div class="empty-body">Loading documentation…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MANIFEST tab ── -->
+    <div id="etab-manifest-body" style="display:none;">
+      <div class="form-section">
+        <div class="form-section-head">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="form-section-title">Manifest</div>
+            <div style="display:flex;background:var(--border);border-radius:5px;padding:2px;gap:1px;">
+              <button id="mfmt-yaml" onclick="switchManifestFormat('yaml')" style="font-size:11px;font-weight:600;padding:2px 10px;border:none;border-radius:3px;cursor:pointer;background:var(--surface);color:var(--t1);">YAML</button>
+              <button id="mfmt-json" onclick="switchManifestFormat('json')" style="font-size:11px;font-weight:600;padding:2px 10px;border:none;border-radius:3px;cursor:pointer;background:transparent;color:var(--t3);">JSON</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button id="manifest-edit-btn" class="btn btn-secondary btn-xs" onclick="enterManifestEdit()">Edit</button>
+            <button id="manifest-save-btn" class="btn btn-primary btn-xs" onclick="saveManifestEdit()" style="display:none;">Save changes</button>
+            <button id="manifest-cancel-btn" class="btn btn-secondary btn-xs" onclick="cancelManifestEdit()" style="display:none;">Cancel</button>
+            <button class="btn btn-secondary btn-xs" onclick="downloadYaml()">↓ Download</button>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <pre class="mono" id="manifest-yaml-pre" style="background:#fff;color:var(--t1);font-size:12px;line-height:1.75;padding:18px;overflow:auto;max-height:520px;margin:0;border-radius:0 0 var(--r-lg) var(--r-lg);">${esc(yamlDump(m))}</pre>
+          <textarea id="manifest-edit-ta" class="mono" spellcheck="false" style="display:none;width:100%;box-sizing:border-box;background:#fff;color:var(--t1);font-size:12px;line-height:1.75;padding:18px;border:none;outline:none;resize:vertical;min-height:320px;max-height:520px;border-radius:0 0 var(--r-lg) var(--r-lg);border-top:2px solid var(--blue);"></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div>`;
+}
+
+function addStream() {
+  S.editManifest = collectManifest();
+  S.editManifest.streams = S.editManifest.streams || [];
+  const newIdx = S.editManifest.streams.length;
+  S.editManifest.streams.push({
+    name: '', path: '', method: 'GET',
+    record_selector: '$[*]',
+    pagination: {strategy: 'none'},
+    params: {},
+  });
+  renderEditPage(S._editConn, S._editVi);
+  // Auto-expand the new stream and switch to settings tab
+  switchEditTab('settings');
+  setTimeout(() => {
+    const detail = document.getElementById(`stream-detail-${newIdx}`);
+    const arrow  = document.getElementById(`stream-arrow-${newIdx}`);
+    if (detail) { detail.classList.add('open'); }
+    if (arrow)  { arrow.classList.add('open'); }
+    document.getElementById(`ef-s${newIdx}-name`)?.focus();
+  }, 50);
+  markDirty();
+}
+
+function deleteStream(i) {
+  if (!confirm(`Remove stream "${S.editManifest.streams[i]?.name || i}"?`)) return;
+  S.editManifest = collectManifest();
+  S.editManifest.streams.splice(i, 1);
+  renderEditPage(S._editConn, S._editVi);
+  switchEditTab('settings');
+  markDirty();
+}
+
+async function discoverStreams() {
+  if (!S.editConn) return;
+  const btn = document.getElementById('discover-btn');
+  const panel = document.getElementById('discover-panel');
+  if (!panel) return;
+
+  // Toggle off if already open
+  if (panel.style.display !== 'none') {
+    panel.style.display = 'none';
+    if (btn) btn.textContent = '⟳ Discover';
+    return;
+  }
+
+  if (btn) { btn.textContent = 'Discovering…'; btn.disabled = true; }
+  panel.style.display = 'block';
+  panel.innerHTML = `<div style="padding:14px 16px;font-size:13px;color:var(--t3);">Probing API for available endpoints…</div>`;
+
+  try {
+    const data = await api(`/api/connectors/${encodeURIComponent(S.editConn)}/discover-streams`);
+    if (!data || !data.endpoints || data.endpoints.length === 0) {
+      panel.innerHTML = `<div style="padding:14px 16px;font-size:13px;color:var(--t3);">No endpoints discovered. Make sure the docs URL is reachable and returns an OpenAPI spec.</div>`;
+      return;
+    }
+
+    const METHOD_COLORS = {GET:'#2563EB',POST:'#16A34A',PUT:'#D97706',PATCH:'#7C3AED',DELETE:'#DC2626'};
+    const rows = data.endpoints.map((ep, idx) => {
+      const color = METHOD_COLORS[ep.method] || '#6B7280';
+      const alreadyAdded = (S.editManifest?.streams||[]).some(s => s.path === ep.path && (s.method||'GET') === ep.method);
+      return `<div style="display:grid;grid-template-columns:60px 1fr auto auto;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--border);">
+        <span style="font-size:11px;font-weight:600;color:${color};background:${color}18;border-radius:3px;padding:2px 6px;text-align:center;">${ep.method}</span>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--t1);font-family:monospace;">${esc(ep.path)}</div>
+          ${ep.summary ? `<div style="font-size:12px;color:var(--t3);margin-top:1px;">${esc(ep.summary)}</div>` : ''}
+        </div>
+        <div style="font-size:12px;color:var(--t3);">${esc(ep.suggested_name||'')}</div>
+        <button class="btn btn-secondary btn-xs" onclick="addDiscoveredStream(${idx})" ${alreadyAdded?'disabled title="Already added"':''}>
+          ${alreadyAdded ? 'Added' : '+ Add'}
+        </button>
+      </div>`;
+    }).join('');
+
+    panel.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--border);">
+        <span style="font-size:12px;color:var(--t3);">Found <strong style="color:var(--t1);">${data.endpoints.length}</strong> endpoint${data.endpoints.length!==1?'s':''} via ${esc(data.strategy||'openapi')}</span>
+        <button class="btn btn-ghost btn-xs" onclick="document.getElementById('discover-panel').style.display='none'">✕ Close</button>
+      </div>
+      <div style="max-height:300px;overflow-y:auto;">${rows}</div>`;
+
+    // Store discovered endpoints for addDiscoveredStream
+    S._discoveredEndpoints = data.endpoints;
+
+  } catch(e) {
+    panel.innerHTML = `<div style="padding:14px 16px;font-size:13px;color:#DC2626;">Discovery failed: ${esc(String(e))}</div>`;
+  } finally {
+    if (btn) { btn.textContent = '⟳ Discover'; btn.disabled = false; }
+  }
+}
+
+function addDiscoveredStream(idx) {
+  const ep = (S._discoveredEndpoints||[])[idx];
+  if (!ep) return;
+  S.editManifest = collectManifest();
+  S.editManifest.streams = S.editManifest.streams || [];
+  const newIdx = S.editManifest.streams.length;
+  S.editManifest.streams.push({
+    name: ep.suggested_name || '',
+    path: ep.path || '',
+    method: ep.method || 'GET',
+    record_selector: ep.suggested_selector || '$[*]',
+    pagination: { strategy: ep.pagination_strategy || 'none' },
+    params: {},
+  });
+  // Save discovered endpoints so we can re-open panel after re-render
+  const savedEndpoints = S._discoveredEndpoints;
+  renderEditPage(S._editConn, S._editVi);
+  switchEditTab('settings');
+  S._discoveredEndpoints = savedEndpoints;
+  // Re-open discover panel and expand new stream
+  setTimeout(async () => {
+    // Re-render the discover panel inline (don't call discoverStreams which would re-fetch)
+    const panel = document.getElementById('discover-panel');
+    if (panel && savedEndpoints?.length) {
+      const METHOD_COLORS = {GET:'#2563EB',POST:'#16A34A',PUT:'#D97706',PATCH:'#7C3AED',DELETE:'#DC2626'};
+      const rows = savedEndpoints.map((ep, i) => {
+        const color = METHOD_COLORS[ep.method] || '#6B7280';
+        const alreadyAdded = (S.editManifest?.streams||[]).some(s => s.path === ep.path && (s.method||'GET') === ep.method);
+        return `<div style="display:grid;grid-template-columns:60px 1fr auto auto;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--border);">
+          <span style="font-size:11px;font-weight:600;color:${color};background:${color}18;border-radius:3px;padding:2px 6px;text-align:center;">${ep.method}</span>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--t1);font-family:monospace;">${esc(ep.path)}</div>
+            ${ep.summary ? `<div style="font-size:12px;color:var(--t3);margin-top:1px;">${esc(ep.summary)}</div>` : ''}
+          </div>
+          <div style="font-size:12px;color:var(--t3);">${esc(ep.suggested_name||'')}</div>
+          <button class="btn btn-secondary btn-xs" onclick="addDiscoveredStream(${i})" ${alreadyAdded?'disabled title="Already added"':''}>
+            ${alreadyAdded ? 'Added' : '+ Add'}
+          </button>
+        </div>`;
+      }).join('');
+      panel.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--t3);">Found <strong style="color:var(--t1);">${savedEndpoints.length}</strong> endpoint${savedEndpoints.length!==1?'s':''}</span>
+          <button class="btn btn-ghost btn-xs" onclick="document.getElementById('discover-panel').style.display='none'">✕ Close</button>
+        </div>
+        <div style="max-height:300px;overflow-y:auto;">${rows}</div>`;
+      panel.style.display = 'block';
+    }
+    const detail = document.getElementById(`stream-detail-${newIdx}`);
+    const arrow  = document.getElementById(`stream-arrow-${newIdx}`);
+    if (detail) { detail.classList.add('open'); }
+    if (arrow)  { arrow.classList.add('open'); }
+  }, 60);
+  markDirty();
+}
+
+function toggleStreamExpand(i) {
+  const detail = document.getElementById(`stream-detail-${i}`);
+  const arrow  = document.getElementById(`stream-arrow-${i}`);
+  if (!detail) return;
+  const open = detail.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open', open);
+  if (open) probeStream(i);
+}
+
+let _probeTimers = {};
+function probeStreamDebounced(i) {
+  clearTimeout(_probeTimers[i]);
+  _probeTimers[i] = setTimeout(() => probeStream(i), 800);
+}
+
+async function probeStream(i) {
+  const statusEl = document.getElementById(`stream-probe-${i}`);
+  if (!statusEl) return;
+  const m = S.editManifest || {};
+  const stream = (m.streams||[])[i];
+  const pathVal = document.getElementById(`ef-s${i}-path`)?.value || stream?.path || '';
+  const methodVal = document.getElementById(`ef-s${i}-method`)?.value || stream?.method || 'GET';
+  if (!pathVal || !m.base_url) { statusEl.innerHTML = ''; return; }
+
+  let path = pathVal.startsWith('/') ? pathVal : '/' + pathVal;
+  const url = m.base_url.replace(/\/$/, '') + path;
+
+  statusEl.innerHTML = `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t3);">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="pulse"><circle cx="12" cy="12" r="10"/></svg>
+    Probing ${url}…
+  </div>`;
+
+  const cred = document.getElementById('ef-cred')?.value || S._creds?.[S.editConn] || '';
+  const auth = m.auth || {};
+  const headers = {};
+  const streamParams = stream?.params || {};
+
+  // Build query params: static stream params + credential if auth is query-based
+  const qp = new URLSearchParams(streamParams);
+  if (cred) {
+    if (auth.type === 'bearer') headers['Authorization'] = `Bearer ${cred}`;
+    else if (auth.type === 'api_key') {
+      if ((auth.in || 'header') === 'query') qp.set(auth.header_name || 'appid', cred);
+      else headers[auth.header_name || 'X-API-Key'] = cred;
+    } else if (auth.type === 'basic') headers['Authorization'] = 'Basic ' + btoa(cred);
+  }
+  const qs = qp.toString();
+  if (qs) url += (url.includes('?') ? '&' : '?') + qs;
+
+  try {
+    const r = await fetch('/api/probe', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({url, method: methodVal, headers}),
+    });
+    const d = await r.json();
+    const st = d.status;
+    const isOk  = st >= 200 && st < 300;
+    const isWarn = st >= 300 && st < 500;
+    const isFail = st === 0 || st >= 500;
+    const color = isOk ? 'var(--green)' : isWarn ? 'var(--amber)' : 'var(--red)';
+    const bg    = isOk ? 'var(--green-bg)' : isWarn ? 'var(--amber-bg)' : 'var(--red-bg)';
+    const bd    = isOk ? 'var(--green-bd)' : isWarn ? 'var(--amber-bd)' : 'var(--red-bd)';
+    const icon  = isOk
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+      : isFail
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`
+      : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+    const label = isOk ? 'Reachable' : isWarn ? 'Check path' : 'Unreachable';
+    const hint  = st === 404 ? ' — path not found, verify the stream path is correct'
+                : st === 401 || st === 403 ? ' — auth required or invalid credential'
+                : st === 0 ? ' — could not connect'
+                : '';
+    statusEl.innerHTML = `<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;background:${bg};border:1px solid ${bd};font-size:11px;font-weight:500;color:${color};">
+      ${icon} ${label} — HTTP ${st || 'N/A'}<span style="font-weight:400;color:${color};opacity:.8;">${hint}</span>
+      <span style="color:var(--t3);font-weight:400;margin-left:4px;font-size:10px;" class="mono">${esc(url)}</span>
+    </div>`;
+  } catch(e) {
+    statusEl.innerHTML = `<div style="font-size:11px;color:var(--red);">Probe failed: ${esc(String(e))}</div>`;
+  }
+}
+
+function switchEditTab(tab) {
+  ['settings','sync','docs','manifest'].forEach(t => {
+    document.getElementById(`etab-${t}`)?.classList.toggle('active', t===tab);
+    const body = document.getElementById(`etab-${t}-body`);
+    if (body) body.style.display = t===tab ? 'block' : 'none';
+  });
+  if (tab==='sync')     { S._debugTab = S._debugTab||'preview'; loadSyncTabStatus(); }
+  if (tab==='docs')     loadEditDocs();
+  if (tab==='manifest') { S._manifestFmt = S._manifestFmt||'yaml'; renderManifestView(); }
+}
+
+function switchSyncInnerTab(tab) {
+  ['log','checkpoints','history'].forEach(t => {
+    const btn  = document.getElementById(`sinntab-${t}`);
+    const body = document.getElementById(`sinntab-${t}-body`);
+    const active = t === tab;
+    if (btn)  btn.classList.toggle('active', active);
+    if (body) body.style.display = active ? '' : 'none';
+  });
+}
+
+function onSyncModeChange() {
+  const isIncremental = document.getElementById('ef-sync_mode')?.value === 'incremental';
+  const cpTab = document.getElementById('sinntab-checkpoints');
+  if (cpTab) cpTab.style.display = isIncremental ? '' : 'none';
+  if (!isIncremental && cpTab?.classList.contains('active')) {
+    switchSyncInnerTab('log');
+  }
+}
+
+async function loadSyncTabStatus() {
+  if (!S.editConn) return;
+  const historyEl = document.getElementById('edit-sync-history');
+  const checkEl   = document.getElementById('edit-checkpoints');
+  if (historyEl) historyEl.innerHTML = '<div style="padding:14px 16px;color:var(--t3);font-size:13px;">Loading…</div>';
+
+  // Populate preview stream selector from manifest
+  const previewSel = document.getElementById('sync-preview-stream');
+  const streamNames = (S.editManifest?.streams||[]).map(s=>s.name||s.stream_name).filter(Boolean);
+  if (previewSel && streamNames.length) {
+    const cur = previewSel.value;
+    previewSel.innerHTML = streamNames.map(n=>`<option value="${n}"${n===cur?' selected':''}>${n.replace(/_/g,' ')}</option>`).join('');
+  }
+
+  let obs;
+  try {
+    obs = await api('/api/observability');
+  } catch(e) {
+    if (historyEl) historyEl.innerHTML = `<div style="padding:16px;font-size:13px;color:var(--red);">Failed to load history: ${esc(e.message)}</div>`;
+    return;
+  }
+  const editLower = (S.editConn||'').toLowerCase();
+  const runs = (obs.history||[]).filter(h => (h.connector_name||'').toLowerCase() === editLower);
+  const cps  = (obs.checkpoints||[]).filter(cp => (cp.connector||'').toLowerCase() === editLower);
+
+  // ── Checkpoints tab ────────────────────────────────────────────────────
+  if (checkEl) {
+    if (!cps.length) {
+      checkEl.innerHTML = `
+        <div style="padding:32px 16px;text-align:center;">
+          <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px;">No checkpoints saved</div>
+          <div style="font-size:12px;color:var(--t3);">Checkpoints are saved automatically after each page of an Incremental sync. Run one to see resume positions here.</div>
+        </div>`;
+    } else {
+      const cpRows = cps.map((cp, i) => {
+        const border = i < cps.length-1 ? 'border-bottom:1px solid var(--border);' : '';
+        const cursor = cp.next_cursor
+          ? `<code style="font-size:10px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bd);padding:1px 6px;border-radius:4px;word-break:break-all;">${esc(String(cp.next_cursor).slice(0,60))}${String(cp.next_cursor).length>60?'…':''}</code>`
+          : `<span style="font-size:11px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd);padding:1px 7px;border-radius:4px;">Fully fetched</span>`;
+        return `
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;${border}">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--green);margin-top:5px;flex-shrink:0;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+                <span style="font-size:13px;font-weight:600;color:var(--t1);">${esc(cp.stream||'unknown')}</span>
+                <span style="font-size:11px;color:var(--t3);">page ${cp.page||1} · ${(cp.records_synced||0).toLocaleString()} records · ${(cp.saved_at||'').slice(0,16).replace('T',' ')}</span>
+              </div>
+              <div style="font-size:10px;color:var(--t3);font-weight:500;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;">Resume cursor</div>
+              ${cursor}
+            </div>
+          </div>`;
+      }).join('');
+      checkEl.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg);">
+          <span style="font-size:11px;color:var(--t3);">${cps.length} stream${cps.length!==1?'s':''} with saved resume positions</span>
+          <button class="btn btn-ghost btn-xs" style="color:var(--red);font-size:11px;" onclick="clearConnectorCheckpoints()">Clear all</button>
+        </div>
+        ${cpRows}`;
+    }
+  }
+
+  // ── Run history ────────────────────────────────────────────────────────
+  if (historyEl) {
+    S._historyRuns = runs;
+    S._historyPage = 0;
+    renderHistoryPage();
+  }
+}
+
+const HISTORY_PAGE_SIZE = 10;
+
+function renderHistoryPage() {
+  const historyEl = document.getElementById('edit-sync-history');
+  if (!historyEl) return;
+  const runs = S._historyRuns || [];
+
+  if (!runs.length) {
+    historyEl.innerHTML = `
+      <div style="padding:32px 16px;text-align:center;">
+        <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px;">No sync runs yet</div>
+        <div style="font-size:12px;color:var(--t3);">Each sync run is recorded here with stream, record count, duration, and status.</div>
+      </div>`;
+    return;
+  }
+
+  const page     = S._historyPage || 0;
+  const total    = runs.length;
+  const pages    = Math.ceil(total / HISTORY_PAGE_SIZE);
+  const pageRuns = runs.slice(page * HISTORY_PAGE_SIZE, (page + 1) * HISTORY_PAGE_SIZE);
+
+  const headerRow = `<div style="display:grid;grid-template-columns:70px 1fr 90px 70px 150px;gap:12px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg);">
+    <span style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;">Status</span>
+    <span style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;">Stream</span>
+    <span style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;">Records</span>
+    <span style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;">Duration</span>
+    <span style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;">Started at</span>
+  </div>`;
+
+  const dataRows = pageRuns.map((h, i) => {
+    const completed = h.status === 'completed';
+    const failed    = h.status === 'failed';
+    const running   = h.status === 'running';
+    const statusPill = completed
+      ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);border:1px solid var(--green-bd);padding:2px 8px;border-radius:99px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;"></span>Done</span>`
+      : failed
+      ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--red);background:var(--red-bg);border:1px solid var(--red-bd);padding:2px 8px;border-radius:99px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;"></span>Failed</span>`
+      : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber-bd);padding:2px 8px;border-radius:99px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--amber);flex-shrink:0;"></span>Running</span>`;
+    const dur    = h.duration_seconds ? h.duration_seconds.toFixed(1)+'s' : '—';
+    const ts     = (h.started_at||'').slice(0,16).replace('T',' ');
+    const rec    = (h.records_synced||0).toLocaleString();
+    const border = i < pageRuns.length-1 ? 'border-bottom:1px solid var(--border);' : '';
+    return `
+      <div style="display:grid;grid-template-columns:70px 1fr 90px 70px 150px;gap:12px;align-items:center;padding:10px 16px;${border}">
+        ${statusPill}
+        <span style="font-size:13px;font-weight:500;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(h.stream_name||'unknown')}</span>
+        <span style="font-size:13px;color:var(--t1);font-weight:600;">${rec}</span>
+        <span style="font-size:12px;color:var(--t2);">${dur}</span>
+        <span style="font-size:12px;color:var(--t2);">${ts}</span>
+      </div>`;
+  }).join('');
+
+  const pagination = pages > 1 ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);background:var(--bg);">
+      <button class="btn btn-secondary btn-xs" onclick="historyChangePage(-1)" ${page===0?'disabled style="opacity:.4;cursor:not-allowed;"':''}>← Prev</button>
+      <span style="font-size:12px;color:var(--t2);">Page ${page+1} of ${pages} <span style="color:var(--t3);">· ${total} runs total</span></span>
+      <button class="btn btn-secondary btn-xs" onclick="historyChangePage(1)" ${page>=pages-1?'disabled style="opacity:.4;cursor:not-allowed;"':''}>Next →</button>
+    </div>` : '';
+
+  historyEl.innerHTML = headerRow + dataRows + pagination;
+}
+
+function historyChangePage(dir) {
+  const pages = Math.ceil((S._historyRuns||[]).length / HISTORY_PAGE_SIZE);
+  S._historyPage = Math.max(0, Math.min(pages - 1, (S._historyPage||0) + dir));
+  renderHistoryPage();
+}
+
+function markDirty() {
+  S.editDirty=true;
+  const btn=document.getElementById('save-btn'), pill=document.getElementById('dirty-pill');
+  if (btn)  {btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';}
+  if (pill) pill.style.display='inline-flex';
+}
+
+function collectManifest() {
+  // Deep-clone so we don't mutate S.editManifest
+  const m = JSON.parse(JSON.stringify(S.editManifest));
+  const v = id => document.getElementById(id)?.value ?? '';
+
+  m.base_url = v('ef-base_url');
+  m.name     = v('ef-name');
+  m.version  = v('ef-version');
+  // Preserve auth.in and auth.secret_ref from the stored manifest; only update editable fields
+  m.auth = {
+    ...((S.editManifest||{}).auth || {}),
+    type:        v('ef-auth_type'),
+    header_name: v('ef-auth_header'),
+  };
+  (m.streams || []).forEach((_, i) => {
+    m.streams[i].method          = v(`ef-s${i}-method`) || 'GET';
+    m.streams[i].name            = v(`ef-s${i}-name`);
+    m.streams[i].path            = v(`ef-s${i}-path`);
+    m.streams[i].record_selector = v(`ef-s${i}-sel`);
+    m.streams[i].pagination      = {...(m.streams[i].pagination||{}), strategy: v(`ef-s${i}-pag`) || 'none'};
+    try { m.streams[i].params = JSON.parse(v(`ef-s${i}-params`) || '{}'); } catch {}
+  });
+  return m;
+}
+
+async function saveEdit() {
+  const btn  = document.getElementById('save-btn');
+  const pill = document.getElementById('dirty-pill');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; btn.style.opacity = '0.6'; }
+
+  try {
+    const m  = collectManifest();
+    const c  = await api(`/api/connectors/${encodeURIComponent(S.editConn)}`);
+    const vi = (c.versions || [{}]).slice(-1)[0];
+    await api(`/api/connectors/${encodeURIComponent(S.editConn)}`, {
+      method: 'PUT',
+      body: JSON.stringify({manifest: m, status: vi.status || 'sandbox', field_accuracy: vi.field_accuracy || 0}),
+    });
+    // Update in-memory manifest so subsequent collects are consistent
+    S.editManifest  = m;
+    S.editDirty     = false;
+    // Re-render so method badges and other display-only elements reflect saved state
+    renderEditPage(S._editConn, S._editVi);
+    switchEditTab('settings');
+    toast('Saved — new version created');
+  } catch(err) {
+    toast(`Save failed: ${String(err.message||err).slice(0,60)}`, 'err');
+    if (btn)  { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save changes'; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
+  }
+}
+
+/** Returns credential from Connection tab input or localStorage. */
+function _getCredential() {
+  return document.getElementById('ef-cred')?.value
+      || (S.editConn ? localStorage.getItem(`ce_cred_${S.editConn}`) : '')
+      || '';
+}
+
+function onSyncCredChange(val) {
+  // Keep both inputs in sync and persist to localStorage
+  const ef = document.getElementById('ef-cred');
+  if (ef) ef.value = val;
+  if (S.editConn && val) localStorage.setItem(`ce_cred_${S.editConn}`, val);
+  if (S.editConn) S._creds[S.editConn] = val;
+}
+
+async function runTest() {
+  const btn = document.querySelector('[onclick="runTest()"]');
+  const cred = _getCredential();
+  // Persist for the session and locally
+  if (cred && S.editConn) {
+    S._creds[S.editConn] = cred;
+    localStorage.setItem(`ce_cred_${S.editConn}`, cred);
+  }
+
+  const resultEl = document.getElementById('test-results');
+  resultEl.innerHTML = '<div style="color:var(--t3);font-size:13px;padding:14px 16px;">Running…</div>';
+  if (btn) { btn.disabled = true; btn.textContent = 'Running…'; }
+
+  try {
+    const m = collectManifest();
+    const res = await api('/api/test', {method:'POST', body:JSON.stringify({manifest:m, credential:cred})});
+    S._testResults = res.results;
+    resultEl.innerHTML = res.results.map((r,i) => {
+      const border = i < res.results.length-1 ? 'border-bottom:1px solid var(--border);' : '';
+      const hasIssue = !r.ok || r.note;
+      // Icon: green checkmark, amber warning, or red error
+      const icon = r.ok
+        ? (r.note
+            ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+            : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`)
+        : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+      return `<div onclick="openTestResultModal(${i})" style="display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:10px 16px;${border}font-size:12px;cursor:pointer;transition:background .12s;" onmouseenter="this.style.background='var(--bg)'" onmouseleave="this.style.background=''" title="Click for details">
+        <div style="display:flex;align-items:center;">${icon}</div>
+        <span class="mono" style="color:var(--t1);font-weight:600;">${esc(r.name)}</span>
+        <span style="color:var(--t3);font-size:11px;">HTTP ${esc(String(r.status))}</span>
+      </div>`;
+    }).join('');
+  } catch(err) {
+    resultEl.innerHTML = `<div style="color:var(--red);font-size:13px;padding:4px 0;">Test failed: ${esc(String(err.message||err))}</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Test connection'; }
+  }
+}
+
+function openTestResultModal(i) {
+  const r = (S._testResults || [])[i];
+  if (!r) return;
+
+  const statusColor = r.ok ? (r.note ? '#D97706' : '#16A34A') : '#DC2626';
+  const statusLabel = r.ok ? (r.note ? '⚠ Warning' : '✓ OK') : '✗ Failed';
+
+  const row = (label, val) => `
+    <div style="display:grid;grid-template-columns:110px 1fr;gap:6px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;align-items:start;">
+      <span style="color:var(--t3);font-weight:500;">${esc(label)}</span>
+      <span class="mono" style="color:var(--t1);word-break:break-all;">${esc(String(val))}</span>
+    </div>`;
+
+  let html = row('Endpoint', r.name)
+    + row('Method', r.method || 'GET')
+    + row('URL', r.url || '—')
+    + row('HTTP status', r.status)
+    + `<div style="display:grid;grid-template-columns:110px 1fr;gap:6px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;">
+        <span style="color:var(--t3);font-weight:500;">Result</span>
+        <span style="color:${statusColor};font-weight:600;">${statusLabel}</span>
+       </div>`;
+
+  if (r.note) {
+    html += `<div style="margin-top:12px;padding:10px 12px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;font-size:12px;color:#92400E;">${esc(r.note)}</div>`;
+  }
+
+  openInfoModal(`${r.name} — Test Result`, html);
+}
+
+async function runSync() {
+  const cred = _getCredential();
+  const mode = document.getElementById('ef-sync_mode')?.value || 'full_refresh';
+  // Persist for the session and locally
+  if (cred && S.editConn) {
+    S._creds[S.editConn] = cred;
+    localStorage.setItem(`ce_cred_${S.editConn}`, cred);
+  }
+
+  const syncBtn = document.querySelector('[onclick="runSync()"]');
+  switchSyncInnerTab('log');
+  const logEmpty = document.getElementById('sync-log-empty');
+  const logEl    = document.getElementById('sync-log');
+  if (logEmpty) logEmpty.style.display = 'none';
+  if (logEl)  { logEl.style.display = 'block'; logEl.innerHTML = ''; }
+
+  // Close any existing sync stream before starting a new one
+  if (S._syncEs) { S._syncEs.close(); S._syncEs = null; }
+
+  if (syncBtn) { syncBtn.disabled = true; syncBtn.textContent = 'Syncing…'; }
+
+  const colors = {'log-ok':'#15803D','log-warn':'#B45309','log-err':'#DC2626','':'#71717A'};
+  const addLine = (msg, cls='') => {
+    const d = document.createElement('div');
+    d.className = `log-line ${cls} mono`;
+    d.style.color = colors[cls] || '#9CA3AF';
+    d.textContent = msg;
+    logEl.appendChild(d);
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+
+  const resetBtn = () => { if (syncBtn) { syncBtn.disabled = false; syncBtn.textContent = 'Run Sync'; } };
+
+  try {
+    const {sync_id} = await api(`/api/connectors/${encodeURIComponent(S.editConn)}/sync`,
+      {method:'POST', body:JSON.stringify({credential:cred, mode})});
+    const es = new EventSource(`/api/sync/${sync_id}/events`);
+    S._syncEs = es;
+    es.onmessage = e => {
+      const ev = JSON.parse(e.data);
+      if (ev.type === 'ping') return;
+      const ic = {success:'✓', error:'✗', warning:'⚠', info:'›'}[ev.level] || '›';
+      const cls = {success:'log-ok', error:'log-err', warning:'log-warn'}[ev.level] || '';
+      if (ev.type === 'log')   addLine(`${ic} ${ev.msg}`, cls);
+      if (ev.type === 'done')  {
+        addLine(`✓ Done — ${ev.total} records synced across ${ev.streams} streams`, 'log-ok');
+        toast(`Sync complete — ${ev.total} records`);
+        es.close();
+        resetBtn();
+        // Show data preview section and populate stream selector
+        const streams = (S.editManifest?.streams || []).map(s => s.name || s.stream_name).filter(Boolean);
+        const sel = document.getElementById('sync-preview-stream');
+        if (sel && streams.length) {
+          sel.innerHTML = streams.map(n => `<option value="${n}">${n.replace(/_/g,' ')}</option>`).join('');
+        }
+        loadSyncTabStatus();
+        switchDebugTab(S._debugTab || 'preview');
+      }
+      if (ev.type === 'error') { addLine(`✗ ${ev.msg}`, 'log-err'); es.close(); resetBtn(); }
+    };
+    es.onerror = () => { es.close(); resetBtn(); };
+  } catch(err) {
+    addLine(`✗ Could not start sync: ${String(err.message||err)}`, 'log-err');
+    resetBtn();
+  }
+}
+
+function switchDebugTab(tab) {
+  S._debugTab = tab;
+  ['preview','request','response','schema','state'].forEach(t => {
+    document.getElementById(`debtab-${t}`)?.classList.toggle('active', t===tab);
+    const body = document.getElementById(`debtab-${t}-body`);
+    if (body) body.style.display = t===tab ? '' : 'none';
+  });
+  if (tab === 'preview')  loadDebugPreview();
+  if (tab === 'request')  loadDebugRequest();
+  if (tab === 'response') loadDebugResponse();
+  if (tab === 'schema')   loadDebugSchema();
+  if (tab === 'state')    loadDebugState();
+}
+
+function _jsonBlock(obj, label='') {
+  const labelHtml = label ? `<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;padding:10px 14px 4px;">${esc(label)}</div>` : '';
+  return `${labelHtml}<pre style="margin:0;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--t1);line-height:1.75;padding:10px 14px;overflow:auto;max-height:380px;border-top:1px solid var(--border);">${esc(JSON.stringify(obj, null, 2))}</pre>`;
+}
+
+function _emptyState(msg) {
+  return `<div style="padding:28px 16px;text-align:center;font-size:13px;color:var(--t3);">${esc(msg)}</div>`;
+}
+
+async function _fetchDebugData() {
+  const stream = document.getElementById('sync-preview-stream')?.value;
+  if (!stream || !S.editConn) return null;
+  try { return await api(`/api/debug/${encodeURIComponent(S.editConn)}/${encodeURIComponent(stream)}`); }
+  catch(e) { return null; }
+}
+
+async function loadDebugPreview() {
+  const el = document.getElementById('debug-preview-content');
+  if (!el || !S.editConn) return;
+  const stream = document.getElementById('sync-preview-stream')?.value;
+  if (!stream) { el.innerHTML = _emptyState('No stream selected.'); return; }
+  el.innerHTML = _emptyState('Loading…');
+  try {
+    // Check if last sync for this stream succeeded
+    let lastSyncOk = null, lastSyncMethod = null;
+    try {
+      const obs = await api('/api/observability');
+      state._state = state._load;  // no-op in frontend, just defensive
+      const editLower = (S.editConn||'').toLowerCase();
+      const runs = (obs.history||[]).filter(h => (h.connector_name||'').toLowerCase() === editLower);
+      const lastRun = runs[0];  // already reversed, newest first
+      if (lastRun) {
+        lastSyncOk = lastRun.status === 'completed';
+      }
+    } catch {}
+
+    const data = await api(`/api/data/${encodeURIComponent(S.editConn)}/${encodeURIComponent(stream)}?limit=20`);
+    const records = data.records || [];
+    if (!records.length) { el.innerHTML = _emptyState('No records found. Run a sync first.'); return; }
+
+    const staleWarning = (lastSyncOk === false)
+      ? `<div style="padding:6px 14px 0;font-size:11px;color:#D97706;display:flex;align-items:center;gap:4px;">⚠ Last sync failed — showing data from a previous successful sync</div>`
+      : '';
+    el.innerHTML = `<div style="font-size:11px;color:var(--t3);padding:8px 14px 0;">${records.length} record${records.length!==1?'s':''}</div>${staleWarning}` + _jsonBlock(records);
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);font-size:13px;padding:14px;">${esc(e.message||String(e))}</div>`;
+  }
+}
+
+async function loadDebugRequest() {
+  const el = document.getElementById('debug-request-content');
+  if (!el) return;
+  el.innerHTML = _emptyState('Loading…');
+  const d = await _fetchDebugData();
+  if (!d?.found) { el.innerHTML = _emptyState('No request captured yet — run a sync first.'); return; }
+  el.innerHTML =
+    `<div style="font-size:11px;color:var(--t3);padding:8px 14px 0;">Captured at ${esc((d.captured_at||'').slice(0,19).replace('T',' '))}</div>` +
+    _jsonBlock(d.request);
+}
+
+async function loadDebugResponse() {
+  const el = document.getElementById('debug-response-content');
+  if (!el) return;
+  el.innerHTML = _emptyState('Loading…');
+  const d = await _fetchDebugData();
+  if (!d?.found) { el.innerHTML = _emptyState('No response captured yet — run a sync first.'); return; }
+  el.innerHTML =
+    `<div style="font-size:11px;color:var(--t3);padding:8px 14px 0;">HTTP ${d.response?.status_code||'?'} · Captured at ${esc((d.captured_at||'').slice(0,19).replace('T',' '))}</div>` +
+    _jsonBlock(d.response);
+}
+
+async function loadDebugSchema() {
+  const el = document.getElementById('debug-schema-content');
+  if (!el || !S.editConn) return;
+  const stream = document.getElementById('sync-preview-stream')?.value;
+  if (!stream) { el.innerHTML = _emptyState('Select a stream to view its schema.'); return; }
+  el.innerHTML = _emptyState('Inferring schema…');
+  try {
+    const data = await api(`/api/data/${encodeURIComponent(S.editConn)}/${encodeURIComponent(stream)}?limit=10`);
+    const records = data.records || [];
+    if (!records.length) { el.innerHTML = _emptyState('No data yet — run a sync first.'); return; }
+    const typeOf = v => {
+      if (v === null || v === undefined) return 'null';
+      if (typeof v === 'boolean') return 'boolean';
+      if (typeof v === 'number') return Number.isInteger(v) ? 'integer' : 'number';
+      if (typeof v === 'object') return Array.isArray(v) ? 'array' : 'object';
+      if (/^\d{4}-\d{2}-\d{2}/.test(String(v))) return 'timestamp';
+      return 'string';
+    };
+    const schema = {};
+    Object.keys(records[0]).forEach(col => {
+      const types = [...new Set(records.map(r => typeOf(r[col])))];
+      schema[col] = { type: types.length === 1 ? types[0] : types, nullable: types.includes('null') };
+    });
+    el.innerHTML =
+      `<div style="font-size:11px;color:var(--t3);padding:8px 14px 0;">Inferred from ${records.length} sample record${records.length!==1?'s':''}</div>` +
+      _jsonBlock(schema);
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);font-size:13px;padding:14px;">${esc(e.message||String(e))}</div>`;
+  }
+}
+
+async function loadDebugState() {
+  const el = document.getElementById('debug-state-content');
+  if (!el || !S.editConn) return;
+  const stream = document.getElementById('sync-preview-stream')?.value;
+  el.innerHTML = _emptyState('Loading…');
+  try {
+    const obs = await api('/api/observability');
+    const editLower = (S.editConn||'').toLowerCase();
+    const cps = (obs.checkpoints||[]).filter(cp => (cp.connector||'').toLowerCase() === editLower);
+    const filtered = stream ? cps.filter(cp => (cp.stream||'').toLowerCase() === stream.toLowerCase()) : cps;
+    if (!filtered.length) { el.innerHTML = _emptyState('No state saved yet — run an Incremental sync to capture cursor state.'); return; }
+    const stateObj = Object.fromEntries(filtered.map(cp => [cp.stream, {
+      cursor: cp.next_cursor || null,
+      page: cp.page || 1,
+      records_synced: cp.records_synced || 0,
+      saved_at: cp.saved_at || '',
+    }]));
+    el.innerHTML = _jsonBlock(stateObj);
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);font-size:13px;padding:14px;">${esc(e.message||String(e))}</div>`;
+  }
+}
+
+function downloadYaml() {
+  const a=document.createElement('a');
+  a.href='data:text/yaml;charset=utf-8,'+encodeURIComponent(yamlDump(collectManifest()));
+  a.download=`${(S.editConn||'manifest').toLowerCase()}_manifest.yaml`;
+  a.click();
+}
+
+function renderManifestView() {
+  const m = collectManifest();
+  const fmt = S._manifestFmt || 'yaml';
+  const pre = document.getElementById('manifest-yaml-pre');
+  if (pre) pre.textContent = fmt === 'json' ? JSON.stringify(m, null, 2) : yamlDump(m);
+  // Toggle button styles
+  const yBtn = document.getElementById('mfmt-yaml');
+  const jBtn = document.getElementById('mfmt-json');
+  if (yBtn) { yBtn.style.background = fmt==='yaml' ? 'var(--surface)' : 'transparent'; yBtn.style.color = fmt==='yaml' ? 'var(--t1)' : 'var(--t3)'; }
+  if (jBtn) { jBtn.style.background = fmt==='json' ? 'var(--surface)' : 'transparent'; jBtn.style.color = fmt==='json' ? 'var(--t1)' : 'var(--t3)'; }
+  // Exit edit mode on format switch
+  cancelManifestEdit();
+}
+
+function switchManifestFormat(fmt) {
+  S._manifestFmt = fmt;
+  renderManifestView();
+}
+
+function enterManifestEdit() {
+  const m   = collectManifest();
+  const fmt = S._manifestFmt || 'yaml';
+  const pre  = document.getElementById('manifest-yaml-pre');
+  const ta   = document.getElementById('manifest-edit-ta');
+  const eBtn = document.getElementById('manifest-edit-btn');
+  const sBtn = document.getElementById('manifest-save-btn');
+  const cBtn = document.getElementById('manifest-cancel-btn');
+  if (!ta) return;
+  // Populate textarea in the current format
+  ta.value = fmt === 'json' ? JSON.stringify(m, null, 2) : yamlDump(m);
+  if (pre)  pre.style.display  = 'none';
+  ta.style.display   = 'block';
+  if (eBtn) eBtn.style.display = 'none';
+  if (sBtn) sBtn.style.display = '';
+  if (cBtn) cBtn.style.display = '';
+  ta.focus();
+}
+
+function cancelManifestEdit() {
+  const pre  = document.getElementById('manifest-yaml-pre');
+  const ta   = document.getElementById('manifest-edit-ta');
+  const eBtn = document.getElementById('manifest-edit-btn');
+  const sBtn = document.getElementById('manifest-save-btn');
+  const cBtn = document.getElementById('manifest-cancel-btn');
+  if (pre)  pre.style.display  = 'block';
+  if (ta)   ta.style.display   = 'none';
+  if (eBtn) eBtn.style.display = '';
+  if (sBtn) sBtn.style.display = 'none';
+  if (cBtn) cBtn.style.display = 'none';
+}
+
+async function saveManifestEdit() {
+  const ta  = document.getElementById('manifest-edit-ta');
+  const fmt = S._manifestFmt || 'yaml';
+  if (!ta) return;
+  let parsed;
+  try {
+    if (fmt === 'json') {
+      parsed = JSON.parse(ta.value);
+    } else {
+      // Use js-yaml if available, else show a helpful error
+      if (typeof jsyaml === 'undefined') {
+        openInfoModal('YAML parsing unavailable', '<div style="font-size:13px;color:var(--t2);">js-yaml library not loaded. Switch to <strong>JSON</strong> format to edit and save.</div>');
+        return;
+      }
+      parsed = jsyaml.load(ta.value);
+    }
+  } catch(e) {
+    openInfoModal(`Invalid ${fmt.toUpperCase()}`, `<div style="color:var(--red);font-size:13px;">Parse error:<br><br><span class="mono" style="white-space:pre-wrap;">${esc(String(e))}</span></div>`);
+    return;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    openInfoModal('Invalid manifest', '<div style="color:var(--red);font-size:13px;">Manifest must be an object, not an array or scalar.</div>');
+    return;
+  }
+  S.editManifest = parsed;
+  try {
+    const c  = await api(`/api/connectors/${encodeURIComponent(S.editConn)}`);
+    const vi = (c.versions || [{}]).slice(-1)[0];
+    await api(`/api/connectors/${encodeURIComponent(S.editConn)}`, {
+      method: 'PUT',
+      body: JSON.stringify({manifest: parsed, status: vi.status || 'sandbox', field_accuracy: vi.field_accuracy || 0}),
+    });
+    S.editDirty = false;
+    // Re-render everything so Connection/Streams tabs reflect new manifest
+    renderEditPage(S._editConn, S._editVi);
+    switchEditTab('manifest');
+    toast('Manifest saved — all tabs updated');
+  } catch(err) {
+    toast(`Save failed: ${String(err.message||err).slice(0,60)}`, 'err');
+  }
+}
+
+
+async function clearConnectorCheckpoints() {
+  if (!confirm('Clear all checkpoints? The next Incremental scan will restart from the beginning.')) return;
+  await api('/api/observability/checkpoints', {method:'DELETE'});
+  toast('Checkpoints cleared');
+  loadSyncTabStatus();
+}
+
+// ─────────────────────────────────────────
+// OBSERVABILITY
+// ─────────────────────────────────────────
+async function loadObservability() {
+  const [obs,tbls,connData]=await Promise.all([
+    api('/api/observability'), api('/api/destination/tables'), api('/api/connectors'),
+  ]);
+  S.obsData=obs; S.obsTables=tbls.tables||[]; S.obsConnectors=connData.connectors||[];
+  const st=obs.stats;
+  const failRate = st.total_syncs>0 ? Math.round((st.failed/st.total_syncs)*100) : 0;
+  document.getElementById('obs-metrics').innerHTML=[
+    {l:'Connectors',    v:connData.stats.total,                   sub:'registered'},
+    {l:'Total Syncs',   v:st.total_syncs,                         sub:'all time'},
+    {l:'Records synced',v:(st.total_records||0).toLocaleString(), sub:'across all streams'},
+    {l:'Failed runs',   v:st.failed,                              sub:`${failRate}% failure rate`},
+    {l:'Avg duration',  v:st.avg_duration?st.avg_duration+'s':'—',sub:'per sync run'},
+  ].map(m=>`<div class="metric"><div class="metric-label">${m.l}</div><div class="metric-value" style="font-size:22px;">${m.v}</div><div class="metric-sub">${m.sub}</div></div>`).join('');
+  obsTab('overview');
+}
+
+function obsTab(tab) {
+  S.obsTab=tab;
+  document.querySelectorAll('.tab-item').forEach(b=>b.classList.toggle('active',b.id===`otab-${tab}`));
+  const el=document.getElementById('obs-body'), d=S.obsData;
+  if(!d){el.innerHTML='<div class="empty"><div class="empty-body">Loading…</div></div>';return;}
+
+  if (tab==='overview') {
+    const connectors = S.obsConnectors||[];
+    const history    = d.history||[];
+
+    // Per-connector health cards
+    const healthCards = connectors.length ? connectors.map(conn => {
+      const runs = history.filter(h=>h.connector_name===conn.name);
+      const lastRun = runs[0]||null;
+      const totalRec = runs.reduce((s,r)=>s+(r.records_synced||0),0);
+      const failures = runs.filter(r=>r.status==='failed').length;
+      const streams  = (conn.versions||[{}]).slice(-1)[0]?.manifest_dict?.streams||[];
+      const health   = !runs.length ? '' : failures===0 ? 'ok' : failures===runs.length ? 'fail' : 'warn';
+      const statusDot = health==='ok' ? `<span class="dot dot-green"></span>`
+                      : health==='fail' ? `<span class="dot" style="background:var(--red);"></span>`
+                      : health==='warn' ? `<span class="dot dot-amber"></span>`
+                      : `<span class="dot" style="background:var(--border-md);"></span>`;
+      const icon = ICONS[conn.name.toLowerCase()]||'⬡';
+      return `<div class="obs-health-card ${health}">
+        <div class="obs-health-name">
+          <span style="font-size:16px;">${icon}</span> ${esc(conn.name)} ${statusDot}
+          <span class="pill ${(conn.versions||[{}]).slice(-1)[0]?.status==='production'?'pill-green':'pill-amber'}" style="margin-left:auto;">${(conn.versions||[{}]).slice(-1)[0]?.status==='production'?'Production':'Beta'}</span>
+        </div>
+        <div class="obs-health-row"><span>Last sync</span><span class="obs-health-val">${lastRun ? (lastRun.started_at||'').slice(0,16).replace('T',' ') : 'Never'}</span></div>
+        <div class="obs-health-row"><span>Records synced</span><span class="obs-health-val">${totalRec.toLocaleString()}</span></div>
+        <div class="obs-health-row"><span>Streams</span><span class="obs-health-val">${streams.length}</span></div>
+        <div class="obs-health-row"><span>Failed runs</span><span class="obs-health-val" style="${failures>0?'color:var(--red)':''};">${failures} / ${runs.length}</span></div>
+        <div style="margin-top:12px;">
+          <button class="btn btn-secondary btn-xs" onclick="openEditTab('${ea(conn.name)}','sync')">View history →</button>
+        </div>
+      </div>`;
+    }).join('') : `<div style="font-size:13px;color:var(--t3);">No connectors registered yet.</div>`;
+
+    // Recent activity feed
+    const recent = history.slice(0,20);
+    const activityRows = recent.length ? recent.map(h => {
+      const ok = h.status==='completed';
+      const dotColor = ok ? 'var(--green)' : h.status==='failed' ? 'var(--red)' : 'var(--blue)';
+      const tp = h.records_synced && h.duration_seconds ? Math.round(h.records_synced/h.duration_seconds)+'/s' : '—';
+      return `<div class="activity-item">
+        <div class="activity-dot" style="background:${dotColor};"></div>
+        <div style="font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(h.connector_name||'')}</div>
+        <div class="mono" style="color:var(--t2);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(h.stream_name||'')}</div>
+        <div><span class="pill ${ok?'pill-green':h.status==='failed'?'pill-red':'pill-blue'}" style="font-size:10px;">${esc(h.status)}</span></div>
+        <div class="mono" style="text-align:right;color:var(--t2);">${(h.records_synced||0).toLocaleString()} rec</div>
+        <div class="mono" style="text-align:right;color:var(--t2);">${h.duration_seconds?h.duration_seconds.toFixed(1)+'s':'—'}</div>
+        <div style="color:var(--t3);font-size:11px;text-align:right;white-space:nowrap;">${(h.started_at||'').slice(0,16).replace('T',' ')}</div>
+      </div>`;
+    }).join('') : `<div style="padding:20px;font-size:13px;color:var(--t3);text-align:center;">No syncs run yet. Go to Configure and run a sync.</div>`;
+
+    el.innerHTML = `
+      <div class="obs-health-grid">${healthCards}</div>
+      <div class="activity-list">
+        <div class="activity-head">Recent activity</div>
+        ${activityRows}
+      </div>`;
+    return;
+  }
+
+  if (tab==='history') {
+    if(!d.history.length){
+      el.innerHTML=`<div class="card"><div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No sync history yet</div><div class="empty-body">Run a sync from Configure to see history here.</div></div></div>`;
+      return;
+    }
+    el.innerHTML=`<div class="card" style="overflow:hidden;"><table class="tbl">
+      <thead><tr><th>Connector</th><th>Stream</th><th>Status</th><th>Records</th><th>Pages</th><th>Duration</th><th>Started</th></tr></thead>
+      <tbody>${d.history.slice(0,100).map(h=>`<tr>
+        <td style="font-weight:600;color:var(--t1);">${esc(h.connector_name||'')}</td>
+        <td class="mono" style="color:var(--t2);">${esc(h.stream_name||'')}</td>
+        <td><span class="pill ${h.status==='completed'?'pill-green':h.status==='failed'?'pill-red':'pill-blue'}">${esc(h.status||'')}</span></td>
+        <td class="mono">${(h.records_synced||0).toLocaleString()}</td>
+        <td class="mono">${h.pages_fetched||0}</td>
+        <td class="mono">${h.duration_seconds?h.duration_seconds.toFixed(1)+'s':'—'}</td>
+        <td style="color:var(--t3);font-size:11px;">${(h.started_at||'').slice(0,19).replace('T',' ')}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  } else if (tab==='data') {
+    if(!S.obsTables.length){
+      el.innerHTML=`<div class="card"><div class="empty"><div class="empty-icon">◫</div><div class="empty-title">No destination tables yet</div><div class="empty-body">Run a sync from Configure to populate the destination database.</div></div></div>`;
+      return;
+    }
+    el.innerHTML=`<div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:14px;">
+      <div style="width:260px;"><label>Table</label>
+        <select id="tbl-sel" onchange="loadTable(this.value)">
+          ${S.obsTables.map(t=>`<option>${esc(t)}</option>`).join('')}
+        </select></div>
+    </div><div id="tbl-data" class="card" style="overflow-x:auto;min-height:80px;"></div>`;
+    loadTable(S.obsTables[0]);
+  } else if (tab==='checkpoints') {
+    if(!d.checkpoints.length){
+      el.innerHTML=`<div class="card"><div class="empty">
+        <div class="empty-icon">◫</div>
+        <div class="empty-title">No checkpoints saved yet</div>
+        <div class="empty-body">Checkpoints are created when you run an <strong>Incremental Scan</strong>. They let a sync resume exactly where it left off if interrupted.<br><br>Go to Configure → Test &amp; Sync, select <em>Incremental Scan</em>, and run a sync.</div>
+      </div></div>`;
+      return;
+    }
+    el.innerHTML=`
+    <div style="background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:var(--r-lg);padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--t2);line-height:1.6;">
+      <strong style="color:var(--t1);">What are checkpoints?</strong>
+      Checkpoints save the cursor position after each page of an Incremental Scan — so if a sync is interrupted, it resumes from the last saved page instead of re-fetching everything.
+    </div>
+    <div class="card" style="overflow:hidden;margin-bottom:12px;"><table class="tbl">
+      <thead><tr><th>Connector</th><th>Stream</th><th>Last page</th><th>Records saved</th><th>Resume cursor</th><th>Saved at</th></tr></thead>
+      <tbody>${d.checkpoints.map(cp=>`<tr>
+        <td style="font-weight:600;color:var(--t1);">${esc(cp.connector||'')}</td>
+        <td class="mono">${esc(cp.stream||'')}</td>
+        <td class="mono">${cp.page||'—'}</td>
+        <td class="mono">${(cp.records_synced||0).toLocaleString()}</td>
+        <td class="mono" style="color:var(--t3);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${ea(String(cp.next_cursor||''))}">
+          ${cp.next_cursor ? esc(String(cp.next_cursor).slice(0,48))+'…' : '—'}
+        </td>
+        <td style="color:var(--t3);font-size:11px;">${(cp.saved_at||'').slice(0,19).replace('T',' ')}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    <button class="btn btn-secondary btn-sm" onclick="clearCheckpoints()">Clear all checkpoints</button>`;
+  }
+}
+
+async function loadTable(name) {
+  const d=await api(`/api/destination/table/${encodeURIComponent(name)}`);
+  const el=document.getElementById('tbl-data'); if(!el) return;
+  if(!d.columns.length){el.innerHTML='<div class="empty"><div class="empty-body">No data in this table.</div></div>';return;}
+  renderTable(d.columns,d.rows,el);
+}
+
+async function clearCheckpoints() {
+  await api('/api/observability/checkpoints',{method:'DELETE'});
+  toast('Checkpoints cleared'); loadObservability();
+}
+
+// ─────────────────────────────────────────
+// SETTINGS MODAL
+// ─────────────────────────────────────────
+function openSettings() {
+  document.getElementById('settings-claude-key').value = localStorage.getItem('ce_claude_key') || '';
+  document.getElementById('settings-model').value = localStorage.getItem('ce_model') || 'claude-sonnet-4-6';
+  document.getElementById('settings-modal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+}
+
+function saveSettings() {
+  const key = document.getElementById('settings-claude-key').value.trim();
+  const model = document.getElementById('settings-model').value;
+  if (key) localStorage.setItem('ce_claude_key', key);
+  else localStorage.removeItem('ce_claude_key');
+  localStorage.setItem('ce_model', model);
+  closeSettings();
+  toast('Settings saved');
+}
+
+// ─────────────────────────────────────────
+// ARTIFACTS PANEL TABS
+// ─────────────────────────────────────────
+let _apTab = 'pipeline';
+/** Toggle the AI fields table collapsed/expanded. */
+function toggleFieldsTable() {
+  const wrap = document.getElementById('fields-table-wrap');
+  const btn  = document.getElementById('fields-toggle-btn');
+  if (!wrap) return;
+  const collapsed = wrap.style.display === 'none';
+  wrap.style.display = collapsed ? 'flex' : 'none';
+  if (btn) btn.textContent = collapsed ? 'Hide ▲' : 'Show ▼';
+}
+
+function switchArtifactsTab(tab) {
+  _apTab = tab;
+  ['pipeline','apidocs'].forEach(t => {
+    document.getElementById(`aptab-${t}`)?.classList.toggle('active', t===tab);
+  });
+  // Show/hide content sections
+  const pipelineSections = ['pipeline-explainer','pipeline-steps','fields-section','records-section'];
+  const show = tab === 'pipeline';
+  pipelineSections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = id==='pipeline-steps' && show && S.stage!=='idle'
+      ? 'flex' : id==='pipeline-explainer' && show && S.stage==='idle'
+      ? 'flex' : show ? '' : 'none';
+  });
+  document.getElementById('ap-apidocs-section').style.display = tab==='apidocs' ? 'block' : 'none';
+  // If the docs tab is empty (page was refreshed after build), load from registry
+  if (tab === 'apidocs' && S.connector) {
+    const content = document.getElementById('ap-apidocs-content');
+    if (content && content.querySelector('.empty')) {
+      api(`/api/connectors/${encodeURIComponent(S.connector)}`).then(conn => {
+        const docs = (conn.versions||[{}]).slice(-1)[0]?.connector_docs;
+        if (docs?.name) renderApiDocs(docs);
+      }).catch(()=>{});
+    }
+  }
+  if (tab === 'pipeline') {
+    // restore pipeline display logic
+    if (S.stage === 'idle') {
+      document.getElementById('pipeline-explainer').style.display = 'flex';
+      document.getElementById('pipeline-steps').style.display = 'none';
+    } else {
+      document.getElementById('pipeline-explainer').style.display = 'none';
+      document.getElementById('pipeline-steps').style.display = 'flex';
+    }
+    const fs = document.getElementById('fields-section');
+    if (fs && fs.querySelector('#fields-tbody')?.children.length) fs.style.display = 'block';
+    const rs = document.getElementById('records-section');
+    // keep display as-is
+  }
+}
+
+function renderApiDocs(docs) {
+  if (!docs || !docs.name) return;
+  const el = document.getElementById('ap-apidocs-content');
+  if (!el) return;
+
+  const authSection = docs.auth ? `
+  <div class="api-doc-section">
+    <div class="api-doc-sec-head">Authentication</div>
+    <div class="api-doc-sec-body">
+      <div class="api-doc-row"><span class="api-doc-label">Type</span><span class="api-doc-val">${esc(docs.auth.type||'—')}</span></div>
+      <div class="api-doc-row"><span class="api-doc-label">Credential</span><span class="api-doc-val">${esc(docs.auth.credential_label||'—')}</span></div>
+      ${docs.auth.how_to_get ? `<div class="api-doc-row"><span class="api-doc-label">How to get</span><span class="api-doc-val">${Array.isArray(docs.auth.how_to_get) ? docs.auth.how_to_get.map((s,i)=>`${i+1}. ${esc(s)}`).join('<br>') : esc(docs.auth.how_to_get)}</span></div>` : ''}
+    </div>
+  </div>` : '';
+
+  const streamsSection = (docs.streams||[]).length ? `
+  <div class="api-doc-section">
+    <div class="api-doc-sec-head">Streams</div>
+    <div class="api-doc-sec-body" style="padding:8px 14px;">
+      ${docs.streams.map(s=>{
+        const furl = s.path && (docs.base_url||'').startsWith('http') ? (docs.base_url||'').replace(/\/$/,'')+s.path : '';
+        const pathEl = s.path ? (furl ? `<a href="${esc(furl)}" target="_blank" rel="noopener" style="font-size:10px;font-weight:400;color:var(--blue);font-family:'JetBrains Mono',monospace;text-decoration:none;">${esc(s.path)} ↗</a>` : `<span style="font-size:10px;font-weight:400;color:var(--t3);font-family:'JetBrains Mono',monospace;">${esc(s.path)}</span>`) : '';
+        return `<div class="api-stream-row"><div class="api-stream-name">${esc(s.name||'')} ${pathEl}</div><div class="api-stream-desc">${esc(s.description||'')}</div></div>`;
+      }).join('')}
+    </div>
+  </div>` : '';
+
+  const rateLimitSection = docs.rate_limits ? `
+  <div class="api-doc-section">
+    <div class="api-doc-sec-head">Rate limits</div>
+    <div class="api-doc-sec-body"><div class="api-doc-row"><span class="api-doc-label">Limits</span><span class="api-doc-val">${esc(docs.rate_limits)}</span></div></div>
+  </div>` : '';
+
+  el.innerHTML = `<div class="api-docs-wrap">
+    <div class="api-doc-section">
+      <div class="api-doc-sec-head">About</div>
+      <div class="api-doc-sec-body">
+        <div class="api-doc-row"><span class="api-doc-label">Name</span><span class="api-doc-val" style="font-weight:600;">${esc(docs.name||'')}</span></div>
+        <div class="api-doc-row"><span class="api-doc-label">Description</span><span class="api-doc-val">${esc(docs.description||'')}</span></div>
+        <div class="api-doc-row"><span class="api-doc-label">Base URL</span><span class="api-doc-val"><code style="font-size:11px;">${esc(docs.base_url||'')}</code></span></div>
+        ${docs.website ? `<div class="api-doc-row"><span class="api-doc-label">Docs</span><span class="api-doc-val"><a href="${esc(docs.website)}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none;font-size:12px;">${esc(docs.website)} ↗</a></span></div>` : ''}
+      </div>
+    </div>
+    ${authSection}${streamsSection}${rateLimitSection}
+    ${(docs.notes||[]).length ? `<div class="api-doc-section">
+      <div class="api-doc-sec-head">Notes</div>
+      <div class="api-doc-sec-body">${docs.notes.map(n=>`<div class="api-doc-row" style="margin-bottom:6px;">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--t3)" stroke-width="1.75" style="flex-shrink:0;margin-top:2px;"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5.5v.5"/></svg>
+        <span class="api-doc-val">${esc(n)}</span></div>`).join('')}
+      </div>
+    </div>` : ''}
+  </div>`;
+
+  // Auto-switch to Docs tab so user sees them
+  switchArtifactsTab('apidocs');
+  document.getElementById('aptab-apidocs').style.fontWeight = '600';
+}
+
+// ─────────────────────────────────────────
+// CONFIGURE DOCS TAB
+// ─────────────────────────────────────────
+
+async function _saveDocs(d) {
+  const c  = await api(`/api/connectors/${encodeURIComponent(S.editConn)}`);
+  const vi = (c.versions||[{}]).slice(-1)[0];
+  await api(`/api/connectors/${encodeURIComponent(S.editConn)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ manifest: S.editManifest, status: vi.status||'sandbox', field_accuracy: vi.field_accuracy||0, connector_docs: d }),
+  });
+  S._editDocs = d;
+}
+
+function _renderDocOverview(d) {
+  return `<div style="display:flex;flex-direction:column;gap:10px;">
+    ${d.name ? `<div class="cfg-doc-row"><span class="cfg-doc-label">Name</span><span class="cfg-doc-val" style="font-weight:600;">${esc(d.name)}</span></div>` : ''}
+    ${d.description ? `<div class="cfg-doc-row"><span class="cfg-doc-label">Description</span><span class="cfg-doc-val">${esc(d.description)}</span></div>` : '<div style="color:var(--t3);font-size:13px;">No description.</div>'}
+    ${d.base_url ? `<div class="cfg-doc-row"><span class="cfg-doc-label">Base URL</span><span class="cfg-doc-val"><code style="font-size:12px;background:var(--bg);padding:2px 8px;border-radius:4px;border:1px solid var(--border);">${esc(d.base_url)}</code></span></div>` : ''}
+    ${d.website ? `<div class="cfg-doc-row"><span class="cfg-doc-label">Docs URL</span><span class="cfg-doc-val"><a href="${esc(d.website)}" target="_blank" rel="noopener" style="color:var(--blue);">${esc(d.website)}</a></span></div>` : ''}
+  </div>`;
+}
+
+function _renderDocAuth(d) {
+  if (!d.auth) return `<div style="color:var(--t3);font-size:13px;">No auth info available.</div>`;
+  const authTypeLabel = {bearer:'Bearer Token',api_key:'API Key',oauth2:'OAuth 2.0',basic:'Basic Auth'}[d.auth.type]||(d.auth.type||'—');
+  const howToGet = d.auth.how_to_get;
+  const howHtml = howToGet
+    ? (Array.isArray(howToGet)
+        ? `<ol style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;">${howToGet.map(s=>`<li style="font-size:13px;color:var(--t1);line-height:1.55;">${esc(s)}</li>`).join('')}</ol>`
+        : `<p style="margin:0;font-size:13px;color:var(--t1);line-height:1.55;">${esc(String(howToGet))}</p>`)
+    : null;
+  return `<div style="display:grid;grid-template-columns:130px 1fr;gap:10px 0;margin-bottom:${howHtml?'14px':'0'};">
+    <div style="display:contents;"><span class="cfg-doc-label">Type</span><span class="cfg-doc-val"><span style="background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bd);border-radius:4px;padding:1px 8px;font-size:11px;font-weight:600;">${esc(authTypeLabel)}</span><span style="font-size:11px;color:var(--t3);margin-left:8px;">Change in Connection tab</span></span></div>
+    ${d.auth.credential_label ? `<div style="display:contents;"><span class="cfg-doc-label">Credential</span><span class="cfg-doc-val"><code style="font-size:12px;background:var(--bg);padding:1px 6px;border-radius:3px;border:1px solid var(--border);">${esc(d.auth.credential_label)}</code></span></div>` : ''}
+    ${d.auth.description ? `<div style="display:contents;"><span class="cfg-doc-label">Description</span><span class="cfg-doc-val">${esc(d.auth.description)}</span></div>` : ''}
+  </div>${howHtml ? `<div><div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">How to obtain credential</div>${howHtml}</div>` : ''}`;
+}
+
+function _renderDocStreams(d) {
+  const baseUrl = (d.base_url||'').replace(/\/$/,'');
+  return (d.streams||[]).map((s,i) => {
+    const fullUrl = s.path ? baseUrl+s.path : '';
+    const pathLink = s.path ? (fullUrl.startsWith('http')
+      ? `<a href="${esc(fullUrl)}" target="_blank" rel="noopener" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);text-decoration:none;background:var(--blue-bg);border:1px solid var(--blue-bd);padding:1px 7px;border-radius:4px;">${esc(s.path)}</a>`
+      : `<code style="font-size:11px;color:var(--t2);background:var(--bg);border:1px solid var(--border);padding:1px 6px;border-radius:4px;">${esc(s.path)}</code>`) : '';
+    const methodBadge = `<span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-bg);border:1px solid var(--green-bd);border-radius:3px;padding:0 5px;letter-spacing:.03em;">${esc((s.method||'GET').toUpperCase())}</span>`;
+    const border = i < (d.streams||[]).length-1 ? 'border-bottom:1px solid var(--border);':'';
+    return `<div style="padding:12px 18px;${border}">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">${methodBadge}<span style="font-size:13px;font-weight:600;color:var(--t1);">${esc(s.name||'')}</span>${pathLink}</div>
+      ${s.description?`<div style="font-size:12px;color:var(--t2);line-height:1.55;">${esc(s.description)}</div>`:''}
+    </div>`;
+  }).join('') || `<div style="padding:16px 18px;color:var(--t3);font-size:13px;">No stream info.</div>`;
+}
+
+function _docEditBtn(sec) {
+  return `<button class="btn btn-xs btn-secondary" style="margin-left:auto;font-size:11px;" onclick="editDocSection('${sec}')">Edit</button>`;
+}
+
+function renderDocReadOnly(docs) {
+  const el = document.getElementById('edit-docs-content');
+  if (!el) return;
+  const d = docs || S._editDocs;
+  if (!d) return;
+  const rateLimitsHtml = d.rate_limits
+    ? `<div style="font-size:13px;color:var(--t1);line-height:1.6;">${esc(d.rate_limits)}</div>`
+    : `<div style="color:var(--t3);font-size:13px;">No rate limit info.</div>`;
+  const notesArr = Array.isArray(d.notes) ? d.notes : (d.notes ? [d.notes] : []);
+  const notesHtml = notesArr.length
+    ? `<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;">${notesArr.map(n=>`<li style="font-size:13px;color:var(--t1);line-height:1.55;">${esc(n)}</li>`).join('')}</ul>`
+    : `<div style="color:var(--t3);font-size:13px;">No notes.</div>`;
+  el.innerHTML = `<div class="cfg-docs-wrap">
+    <div class="cfg-doc-section" id="doc-sec-overview">
+      <div class="cfg-doc-sec-head" style="display:flex;align-items:center;">Overview ${_docEditBtn('overview')}</div>
+      <div class="cfg-doc-sec-body" id="doc-sec-overview-body">${_renderDocOverview(d)}</div>
+    </div>
+    <div class="cfg-doc-section" id="doc-sec-auth">
+      <div class="cfg-doc-sec-head" style="display:flex;align-items:center;">Authentication ${_docEditBtn('auth')}</div>
+      <div class="cfg-doc-sec-body" id="doc-sec-auth-body">${_renderDocAuth(d)}</div>
+    </div>
+    <div class="cfg-doc-section" id="doc-sec-streams">
+      <div class="cfg-doc-sec-head">Streams &amp; Endpoints <span style="font-weight:400;font-size:10px;color:var(--t3);margin-left:6px;">${(d.streams||[]).length} stream${(d.streams||[]).length!==1?'s':''} — edit in Connection tab</span></div>
+      <div style="padding:0;" id="doc-sec-streams-body">${_renderDocStreams(d)}</div>
+    </div>
+    <div class="cfg-doc-section" id="doc-sec-ratelimits">
+      <div class="cfg-doc-sec-head" style="display:flex;align-items:center;">Rate Limits ${_docEditBtn('ratelimits')}</div>
+      <div class="cfg-doc-sec-body" id="doc-sec-ratelimits-body">${rateLimitsHtml}</div>
+    </div>
+    <div class="cfg-doc-section" id="doc-sec-notes">
+      <div class="cfg-doc-sec-head" style="display:flex;align-items:center;">Notes ${_docEditBtn('notes')}</div>
+      <div class="cfg-doc-sec-body" id="doc-sec-notes-body">${notesHtml}</div>
+    </div>
+  </div>`;
+}
+
+function editDocSection(sec) {
+  const d = S._editDocs;
+  if (!d) return;
+  const bodyEl = document.getElementById(`doc-sec-${sec}-body`);
+  if (!bodyEl) return;
+  const saveCancel = `<div style="display:flex;gap:8px;margin-top:14px;">
+    <button class="btn btn-primary btn-sm" onclick="saveDocSection('${sec}')">Save</button>
+    <button class="btn btn-secondary btn-sm" onclick="cancelDocSection('${sec}')">Cancel</button>
+  </div>`;
+  if (sec === 'overview') {
+    bodyEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;">
+      <div><label>Name</label><input id="doc-ov-name" value="${ea(d.name||'')}"></div>
+      <div><label>Description</label><textarea id="doc-ov-desc" rows="3" style="resize:vertical;">${esc(d.description||'')}</textarea></div>
+      <div><label>Base URL</label><input id="doc-ov-url" value="${ea(d.base_url||'')}"></div>
+      <div><label>Documentation URL</label><input id="doc-ov-website" value="${ea(d.website||'')}"></div>
+    </div>${saveCancel}`;
+  } else if (sec === 'auth') {
+    const authTypeLabel = {bearer:'Bearer Token',api_key:'API Key',oauth2:'OAuth 2.0',basic:'Basic Auth'}[d.auth?.type]||(d.auth?.type||'—');
+    const howToGetText = Array.isArray(d.auth?.how_to_get) ? d.auth.how_to_get.join('\n') : (d.auth?.how_to_get||'');
+    bodyEl.innerHTML = `<div style="margin-bottom:10px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--t2);">
+      Auth type: <strong>${esc(authTypeLabel)}</strong> &nbsp;·&nbsp; Change in the <em>Connection</em> tab
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div><label>Credential label</label><input id="doc-auth-label" value="${ea(d.auth?.credential_label||'')}"></div>
+      <div><label>Auth description</label><textarea id="doc-auth-desc" rows="2" style="resize:vertical;">${esc(d.auth?.description||'')}</textarea></div>
+      <div><label>How to get credential <span style="font-weight:400;color:var(--t3);">(one step per line)</span></label><textarea id="doc-auth-how" rows="4" style="resize:vertical;">${esc(howToGetText)}</textarea></div>
+    </div>${saveCancel}`;
+  } else if (sec === 'ratelimits') {
+    bodyEl.innerHTML = `<div><label>Rate limits</label><textarea id="doc-rl-val" rows="3" style="resize:vertical;">${esc(d.rate_limits||'')}</textarea></div>${saveCancel}`;
+  } else if (sec === 'notes') {
+    const notesText = Array.isArray(d.notes) ? d.notes.join('\n') : (d.notes||'');
+    bodyEl.innerHTML = `<div><label>Notes <span style="font-weight:400;color:var(--t3);">(one note per line)</span></label><textarea id="doc-notes-val" rows="5" style="resize:vertical;">${esc(notesText)}</textarea></div>${saveCancel}`;
+  }
+}
+
+async function saveDocSection(sec) {
+  const d = S._editDocs;
+  if (!d || !S.editConn) return;
+  if (sec === 'overview') {
+    d.name        = document.getElementById('doc-ov-name')?.value ?? d.name;
+    d.description = document.getElementById('doc-ov-desc')?.value ?? d.description;
+    d.base_url    = document.getElementById('doc-ov-url')?.value ?? d.base_url;
+    d.website     = document.getElementById('doc-ov-website')?.value ?? d.website;
+  } else if (sec === 'auth') {
+    if (!d.auth) d.auth = {};
+    d.auth.credential_label = document.getElementById('doc-auth-label')?.value ?? d.auth.credential_label;
+    d.auth.description      = document.getElementById('doc-auth-desc')?.value ?? d.auth.description;
+    const raw = document.getElementById('doc-auth-how')?.value || '';
+    d.auth.how_to_get = raw.split('\n').map(s=>s.trim()).filter(Boolean);
+  } else if (sec === 'ratelimits') {
+    d.rate_limits = document.getElementById('doc-rl-val')?.value ?? d.rate_limits;
+  } else if (sec === 'notes') {
+    const raw = document.getElementById('doc-notes-val')?.value || '';
+    d.notes = raw.split('\n').map(s=>s.trim()).filter(Boolean);
+  }
+  try {
+    await _saveDocs(d);
+    toast('Section saved');
+  } catch(e) {
+    toast(`Save failed: ${String(e.message||e).slice(0,60)}`, 'err');
+    return;
+  }
+  renderDocReadOnly(d);
+}
+
+function cancelDocSection(sec) {
+  renderDocReadOnly(S._editDocs);
+}
+
+async function loadEditDocs() {
+  const el = document.getElementById('edit-docs-content');
+  if (!el || !S.editConn) return;
+  el.innerHTML = `<div class="empty" style="padding-top:40px;"><div class="empty-icon">📄</div><div class="empty-title">Loading docs…</div></div>`;
+  const conn = await api(`/api/connectors/${encodeURIComponent(S.editConn)}`);
+  const vi = (conn.versions||[{}]).slice(-1)[0];
+  let docs = vi.connector_docs;
+
+  if (!docs || !docs.name) {
+    const all = await api('/api/connectors');
+    const match = (all.connectors||[]).find(c => c.name.toLowerCase() === (S.editConn||'').toLowerCase());
+    if (match) {
+      const allVersions = await api(`/api/connectors/${encodeURIComponent(match.name)}`);
+      const fallbackDocs = (allVersions.versions||[{}]).slice(-1)[0]?.connector_docs;
+      if (fallbackDocs?.name) { docs = fallbackDocs; }
+    }
+    if (!docs?.name) {
+      el.innerHTML = `<div class="empty" style="padding-top:40px;">
+        <div class="empty-icon">📄</div>
+        <div class="empty-title">No documentation generated yet</div>
+        <div class="empty-body">Rebuild the connector with a Claude API key to auto-generate documentation.</div>
+      </div>`;
+      return;
+    }
+  }
+
+  S._editDocs = JSON.parse(JSON.stringify(docs));
+  renderDocReadOnly(docs);
+}
+
+// ─────────────────────────────────────────
+// CHAT — TYPING INDICATOR
+// ─────────────────────────────────────────
+function addTypingIndicator(id) {
+  const wrap = document.getElementById('chat-messages');
+  if (!wrap.style.display || wrap.style.display === 'none') {
+    wrap.style.display = 'flex';
+    wrap.style.flexDirection = 'column';
+  }
+  const div = document.createElement('div');
+  div.className = 'msg-row';
+  div.id = id;
+  div.innerHTML = `<div class="bot-icon"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#2563EB"/><circle cx="16" cy="16" r="7" fill="white"/></svg></div>
+    <div class="bubble bubble-bot cfg-typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+  wrap.appendChild(div);
+  document.getElementById('builder-body').scrollTop = 9999;
+}
+
+function removeTypingIndicator(id) {
+  document.getElementById(id)?.remove();
+}
+
+// ─────────────────────────────────────────
+// SIDEBAR COUNT
+// ─────────────────────────────────────────
+async function updateSidebarCount() {
+  const d=await api('/api/connectors');
+  document.getElementById('conn-count-sidebar').textContent=d.stats.total;
+}
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+buildConnGrid();
+navigate('marketplace');
+</script>
+</body>
+</html>

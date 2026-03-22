@@ -1,0 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif !important;
+}
+
+#MainMenu { visibility: hidden; }
+footer    { visibility: hidden; }
+header    { visibility: hidden; }
+
+/* Constrain width for centered layout */
+.main .block-container {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+    max-width: 820px;
+}
+
+/* Slightly rounder buttons */
+.stButton > button {
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+/* Rounder inputs */
+.stTextInput > div > div > input {
+    border-radius: 8px;
+}
