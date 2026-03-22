@@ -46,6 +46,7 @@ from core.ingestion import DocumentIngester
 from core.ai_manifest_fill import (
     AIManifestFiller,
     CALENDLY_MANIFEST, CALENDLY_FILLED_FIELDS,
+    GITHUB_MANIFEST,   GITHUB_FILLED_FIELDS,
     _mock_docs,
 )
 from core.validation import ValidationStack
@@ -59,6 +60,7 @@ async def lifespan(app: FastAPI):
     """Pre-seed Calendly and GitHub connectors on first run."""
     seeds = [
         ("Calendly", CALENDLY_MANIFEST, CALENDLY_FILLED_FIELDS),
+        ("GitHub",   GITHUB_MANIFEST,   GITHUB_FILLED_FIELDS),
     ]
     for cname, manifest, fields in seeds:
         if not reg.get_connector(cname):
@@ -91,10 +93,10 @@ _sessions: dict[str, dict] = {}
 
 # Connector catalogue — mirrors the frontend CONNECTORS constant
 CONNECTORS = {
-    "calendly":   {"display": "Calendly",   "icon": "📅", "auth_label": "Bearer token",  "url": "https://developer.calendly.com/api-docs", "needs_auth": True},
-    "salesforce": {"display": "Salesforce", "icon": "☁️", "auth_label": "OAuth 2.0",     "url": "https://developer.salesforce.com",        "needs_auth": True},
-    "hubspot":    {"display": "HubSpot",    "icon": "🟠", "auth_label": "API key",        "url": "https://developers.hubspot.com",          "needs_auth": True},
-    "stripe":     {"display": "Stripe",     "icon": "💳", "auth_label": "API key",        "url": "https://stripe.com/docs/api",             "needs_auth": True},
+    "github":     {"display": "GitHub",     "icon": "🐙", "auth_label": "No auth needed", "url": "https://api.github.com",                  "needs_auth": False},
+    "salesforce": {"display": "Salesforce", "icon": "☁️", "auth_label": "OAuth 2.0",      "url": "https://developer.salesforce.com",        "needs_auth": True},
+    "hubspot":    {"display": "HubSpot",    "icon": "🟠", "auth_label": "API key",         "url": "https://developers.hubspot.com",          "needs_auth": True},
+    "stripe":     {"display": "Stripe",     "icon": "💳", "auth_label": "API key",         "url": "https://stripe.com/docs/api",             "needs_auth": True},
 }
 
 

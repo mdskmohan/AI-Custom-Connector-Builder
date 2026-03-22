@@ -78,6 +78,59 @@ CALENDLY_MANIFEST = {
     "pii_fields": ["email", "name", "slug"],
 }
 
+GITHUB_MANIFEST = {
+    "connector_type": "rest",
+    "connector_name": "GitHub",
+    "version": "1.0.0",
+    "name": "GitHub",
+    "auth": {"type": "none"},
+    "base_url": "https://api.github.com",
+    "rate_limit": {"requests_per_minute": 60},
+    "streams": [
+        {
+            "name": "releases",
+            "path": "/repos/microsoft/vscode/releases",
+            "method": "GET",
+            "record_selector": "$[*]",
+            "primary_key": "id",
+            "pagination": {"strategy": "link_header", "page_size": 30},
+            "incremental": {"cursor_field": "published_at"},
+            "params": {"per_page": 30},
+        },
+        {
+            "name": "contributors",
+            "path": "/repos/microsoft/vscode/contributors",
+            "method": "GET",
+            "record_selector": "$[*]",
+            "primary_key": "id",
+            "pagination": {"strategy": "link_header", "page_size": 30},
+            "params": {"per_page": 30},
+        },
+    ],
+    "error_handling": {
+        "retry_strategy": "exponential_backoff",
+        "retryable_codes": [429, 500, 502, 503],
+        "max_retries": 3,
+    },
+    "pii_fields": [],
+}
+
+GITHUB_FILLED_FIELDS = [
+    FilledField("connector.type", "rest", "GitHub provides a REST API at api.github.com", "high"),
+    FilledField("auth.type", "none", "Public endpoints require no auth; rate limited to 60 req/hour unauthenticated", "high"),
+    FilledField("base_url", "https://api.github.com", "Base URL: https://api.github.com", "high"),
+    FilledField("rate_limit.requests_per_minute", 60, "60 requests per hour unauthenticated", "high"),
+    FilledField("streams[0].name", "releases", "GET /repos/{owner}/{repo}/releases — List releases", "high"),
+    FilledField("streams[0].path", "/repos/microsoft/vscode/releases", "List releases for microsoft/vscode", "high"),
+    FilledField("streams[0].record_selector", "$[*]", "Releases endpoint returns a JSON array directly", "high"),
+    FilledField("streams[0].primary_key", "id", "Each release has a unique integer id", "high"),
+    FilledField("streams[0].pagination.strategy", "link_header", "GitHub uses Link header with rel=next for pagination", "high"),
+    FilledField("streams[1].name", "contributors", "GET /repos/{owner}/{repo}/contributors — List contributors", "high"),
+    FilledField("streams[1].path", "/repos/microsoft/vscode/contributors", "List contributors to microsoft/vscode", "high"),
+    FilledField("error_handling.retry_strategy", "exponential_backoff", "Retry on rate limit and server errors", "medium"),
+    FilledField("pii_fields", [], "Public contributor data only", "medium"),
+]
+
 
 CALENDLY_FILLED_FIELDS = [
     FilledField("connector.type", "rest", "Calendly is a REST API", "high"),
