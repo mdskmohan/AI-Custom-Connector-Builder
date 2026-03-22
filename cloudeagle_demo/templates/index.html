@@ -765,6 +765,22 @@ const STEPS = [
 ];
 const ICONS = {github:'🐙',calendly:'📅',salesforce:'☁️',hubspot:'🟠',stripe:'💳'};
 
+function getLogoUrl(baseUrl) {
+  if (!baseUrl) return null;
+  try {
+    const hostname = new URL(baseUrl).hostname;
+    // Strip common API subdomains (api., app., dev.) to get root domain for logo lookup
+    const parts = hostname.split('.');
+    const root = parts.length > 2 ? parts.slice(-2).join('.') : hostname;
+    return `https://logo.clearbit.com/${root}`;
+  } catch { return null; }
+}
+
+function connIconHtml(logoUrl, fallback, imgSize=26) {
+  if (!logoUrl) return `<span>${fallback}</span>`;
+  return `<img src="${logoUrl}" width="${imgSize}" height="${imgSize}" style="border-radius:5px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display=''" alt=""><span style="display:none;">${fallback}</span>`;
+}
+
 // ─────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────
@@ -1673,6 +1689,7 @@ function renderMarketplaceSections() {
     const spills  = streams.slice(0,3).map(s=>`<span class="pill pill-gray">${esc(s.name||'')}</span>`).join('');
     const sover   = streams.length > 3 ? `<span class="pill pill-gray">+${streams.length-3}</span>` : '';
     const icon    = ICONS[conn.name.toLowerCase()] || '⬡';
+    const logoUrl = getLogoUrl((conn.versions||[{}]).slice(-1)[0]?.manifest_dict?.base_url);
     const isProd  = status === 'production';
 
     const dotColor = isProd ? '#10B981' : '#F59E0B';
@@ -1685,7 +1702,7 @@ function renderMarketplaceSections() {
 
     return `<div class="mp-ctile ${isProd?'is-production':''}">
       <div class="mp-ctile-top">
-        <div class="mp-ctile-icon">${icon}</div>
+        <div class="mp-ctile-icon">${connIconHtml(logoUrl, icon, 26)}</div>
         <div style="flex:1;min-width:0;">
           <div class="mp-ctile-name" style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;">
             <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(conn.name)}</span>
@@ -1864,6 +1881,7 @@ function renderEditPage(conn, vi) {
   const m = S.editManifest;
   const status = vi.status||'sandbox';
   const icon = ICONS[conn.name.toLowerCase()]||'⬡';
+  const logoUrl = getLogoUrl(m.base_url);
   const streams = m.streams||[];
   const isBuiltIn = Object.values(CONNECTORS).some(c => c.display === conn.name);
   const statusPill = status==='production'
@@ -1927,7 +1945,7 @@ function renderEditPage(conn, vi) {
         </button>
         <span style="color:var(--border-md);">/</span>
         <div class="cfg-conn-info">
-          <div class="cfg-icon">${icon}</div>
+          <div class="cfg-icon">${connIconHtml(logoUrl, icon, 28)}</div>
           <div>
             <div class="cfg-name">${esc(conn.name)}</div>
             <div class="cfg-meta">
@@ -3037,9 +3055,10 @@ function obsTab(tab) {
                       : health==='warn' ? `<span class="dot dot-amber"></span>`
                       : `<span class="dot" style="background:var(--border-md);"></span>`;
       const icon = ICONS[conn.name.toLowerCase()]||'⬡';
+      const logoUrl = getLogoUrl((conn.versions||[{}]).slice(-1)[0]?.manifest_dict?.base_url);
       return `<div class="obs-health-card ${health}">
         <div class="obs-health-name">
-          <span style="font-size:16px;">${icon}</span> ${esc(conn.name)} ${statusDot}
+          <span style="display:inline-flex;align-items:center;width:20px;height:20px;">${connIconHtml(logoUrl, icon, 20)}</span> ${esc(conn.name)} ${statusDot}
           <span class="pill ${(conn.versions||[{}]).slice(-1)[0]?.status==='production'?'pill-green':'pill-amber'}" style="margin-left:auto;">${(conn.versions||[{}]).slice(-1)[0]?.status==='production'?'Production':'Beta'}</span>
         </div>
         <div class="obs-health-row"><span>Last sync</span><span class="obs-health-val">${lastRun ? (lastRun.started_at||'').slice(0,16).replace('T',' ') : 'Never'}</span></div>
