@@ -3222,14 +3222,18 @@ function _renderDocAuth(d) {
 }
 
 function _renderDocStreams(d) {
-  const baseUrl = (d.base_url||'').replace(/\/$/,'');
-  return (d.streams||[]).map((s,i) => {
-    const fullUrl = s.path ? baseUrl+s.path : '';
-    const pathLink = s.path ? (fullUrl.startsWith('http')
-      ? `<a href="${esc(fullUrl)}" target="_blank" rel="noopener" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);text-decoration:none;background:var(--blue-bg);border:1px solid var(--blue-bd);padding:1px 7px;border-radius:4px;">${esc(s.path)}</a>`
-      : `<code style="font-size:11px;color:var(--t2);background:var(--bg);border:1px solid var(--border);padding:1px 6px;border-radius:4px;">${esc(s.path)}</code>`) : '';
+  // Always read from the live manifest so added/removed streams are reflected immediately
+  const liveStreams = (S.editManifest && S.editManifest.streams) ? S.editManifest.streams : (d.streams||[]);
+  const baseUrl = (S.editManifest?.base_url || d.base_url||'').replace(/\/$/,'');
+  return liveStreams.map((s,i) => {
+    // manifest uses 'endpoint', docs snapshot uses 'path' — normalise
+    const path = s.endpoint || s.path || '';
+    const fullUrl = path ? baseUrl+path : '';
+    const pathLink = path ? (fullUrl.startsWith('http')
+      ? `<a href="${esc(fullUrl)}" target="_blank" rel="noopener" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);text-decoration:none;background:var(--blue-bg);border:1px solid var(--blue-bd);padding:1px 7px;border-radius:4px;">${esc(path)}</a>`
+      : `<code style="font-size:11px;color:var(--t2);background:var(--bg);border:1px solid var(--border);padding:1px 6px;border-radius:4px;">${esc(path)}</code>`) : '';
     const methodBadge = `<span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-bg);border:1px solid var(--green-bd);border-radius:3px;padding:0 5px;letter-spacing:.03em;">${esc((s.method||'GET').toUpperCase())}</span>`;
-    const border = i < (d.streams||[]).length-1 ? 'border-bottom:1px solid var(--border);':'';
+    const border = i < liveStreams.length-1 ? 'border-bottom:1px solid var(--border);':'';
     return `<div style="padding:12px 18px;${border}">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">${methodBadge}<span style="font-size:13px;font-weight:600;color:var(--t1);">${esc(s.name||'')}</span>${pathLink}</div>
       ${s.description?`<div style="font-size:12px;color:var(--t2);line-height:1.55;">${esc(s.description)}</div>`:''}
@@ -3263,7 +3267,7 @@ function renderDocReadOnly(docs) {
       <div class="cfg-doc-sec-body" id="doc-sec-auth-body">${_renderDocAuth(d)}</div>
     </div>
     <div class="cfg-doc-section" id="doc-sec-streams">
-      <div class="cfg-doc-sec-head">Streams &amp; Endpoints <span style="font-weight:400;font-size:10px;color:var(--t3);margin-left:6px;">${(d.streams||[]).length} stream${(d.streams||[]).length!==1?'s':''} — edit in Connection tab</span></div>
+      <div class="cfg-doc-sec-head">Streams &amp; Endpoints <span style="font-weight:400;font-size:10px;color:var(--t3);margin-left:6px;">${((S.editManifest&&S.editManifest.streams)||d.streams||[]).length} stream${((S.editManifest&&S.editManifest.streams)||d.streams||[]).length!==1?'s':''} — edit in Connection tab</span></div>
       <div style="padding:0;" id="doc-sec-streams-body">${_renderDocStreams(d)}</div>
     </div>
     <div class="cfg-doc-section" id="doc-sec-ratelimits">
