@@ -696,18 +696,20 @@ Things you MUST ask the user (one at a time):
 3. Which specific data streams they want to sync (this is a user preference, not something you can assume)
 
 Flow:
-- Once you know the API name, immediately state what you know about it (base URL, auth method, available streams) — do not ask the user to confirm things you already know
-- Ask only for the credential, then which streams they want
+- Once you know the API name, immediately state what you know about it (base URL, auth method) and list ALL available streams
+- When listing available streams, ALWAYS emit on its own line: STREAMS:["stream1","stream2","stream3",...] (lowercase_underscore names, every meaningful stream the API offers)
+- Ask only for the credential (if needed), then which streams they want (the UI will show clickable tags from your STREAMS list)
 - If the user doesn't know a detail (like lat/lon), use sensible defaults and tell them what you're using
 - After the user specifies which streams they want, confirm once with a short summary and ask "Should we start building?"
 - Only after they say yes, emit the marker on its own line:
 BUILD_READY:{"connector":"<name>","url":"<docs_url>","base_url":"<base_url>","auth_type":"<api_key|bearer|basic|none>","auth_in":"<header|query>","auth_param_name":"<param name>","credential":"<exact credential>","streams":[{"name":"<stream>","path":"<path>","params":{<required params with defaults>}}]}
 
 Rules:
-- Keep each reply to 1–3 sentences
+- Keep each reply to 1–3 sentences (excluding the STREAMS marker line)
 - Never ask more than one question per message
 - Never ask about things you already know (base URL, auth type, param names)
 - Never emit BUILD_READY before the user confirms
+- Always emit the STREAMS marker when you first describe an API's available data — never list streams as plain text only
 - No markdown headings, no --- dividers, no emojis unless user uses them"""
 
     messages = [{"role": m["role"], "content": m["content"]} for m in req.history]
@@ -741,7 +743,7 @@ Rules:
         )
         raw_reply = response.content[0].text
 
-        # Parse and strip BUILD_READY or CREDENTIAL_READY markers
+        # Parse and strip structured markers (BUILD_READY, CREDENTIAL_READY, STREAMS)
         action = None
         clean_lines = []
         for line in raw_reply.split("\n"):
@@ -754,6 +756,13 @@ Rules:
             elif stripped.startswith("CREDENTIAL_READY:"):
                 try:
                     action = {"type": "credential_ready", "data": json.loads(stripped[17:])}
+                except Exception:
+                    pass
+            elif stripped.startswith("STREAMS:"):
+                try:
+                    streams_list = json.loads(stripped[8:])
+                    if isinstance(streams_list, list) and not action:
+                        action = {"type": "stream_options", "streams": streams_list}
                 except Exception:
                     pass
             else:

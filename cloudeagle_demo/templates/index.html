@@ -1060,6 +1060,8 @@ async function sendChat() {
       addMsgWithBuildCard(reply, resp.action.data);
     } else if (resp.action?.type === 'credential_ready') {
       addMsgWithCredCard(reply, resp.action.data.connector, resp.action.data.credential, resp.action.data.url || '');
+    } else if (resp.action?.type === 'stream_options') {
+      addMsgWithStreamPills(reply, resp.action.streams);
     } else {
       addMsg('bot', renderMarkdown(reply));
       // Do NOT auto-trigger builds from URL detection here — the AI controls
@@ -1268,6 +1270,74 @@ function addMsgWithCredCard(replyText, connectorName, credentialValue, docsUrl='
     </div>`;
   wrap.appendChild(div);
   document.getElementById('builder-body').scrollTop = 9999;
+}
+
+// Render a bot message with all available streams as selectable tag pills.
+// User clicks to toggle, then clicks "Sync these streams →" to confirm selection.
+function addMsgWithStreamPills(replyText, streams) {
+  const wrap = document.getElementById('chat-messages');
+  if (!wrap.style.display || wrap.style.display === 'none') {
+    wrap.style.display = 'flex'; wrap.style.flexDirection = 'column';
+  }
+  const cardId = 'sp-' + Date.now();
+  const pillsHtml = streams.map(s =>
+    `<span class="stream-pill" data-stream="${ea(s)}" onclick="toggleStreamPill(this,'${cardId}')"
+      style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;
+             font-size:12px;font-weight:500;border:1.5px solid var(--blue);color:var(--blue);
+             background:var(--blue-bg);user-select:none;transition:all .15s;"
+    >${esc(s)}</span>`
+  ).join('');
+  const div = document.createElement('div');
+  div.className = 'msg-row';
+  div.innerHTML = `
+    <div class="bot-icon"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#2563EB"/><circle cx="16" cy="16" r="7" fill="white"/></svg></div>
+    <div class="bubble bubble-bot">
+      ${replyText ? `<div style="margin-bottom:10px;">${renderMarkdown(replyText)}</div>` : ''}
+      <div id="${cardId}" style="display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;">Available streams — click to select</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;">${pillsHtml}</div>
+        <button class="btn btn-primary" style="align-self:flex-start;margin-top:2px;" onclick="confirmStreamSelection('${cardId}')">
+          Sync these streams →
+        </button>
+      </div>
+    </div>`;
+  wrap.appendChild(div);
+  document.getElementById('builder-body').scrollTop = 9999;
+}
+
+function toggleStreamPill(el, cardId) {
+  const selected = el.getAttribute('data-selected') === 'true';
+  if (selected) {
+    el.removeAttribute('data-selected');
+    el.style.background = 'var(--blue-bg)';
+    el.style.color = 'var(--blue)';
+    el.style.borderColor = 'var(--blue)';
+    el.style.opacity = '1';
+  } else {
+    el.setAttribute('data-selected', 'true');
+    el.style.background = 'var(--blue)';
+    el.style.color = '#fff';
+    el.style.borderColor = 'var(--blue)';
+  }
+}
+
+function confirmStreamSelection(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const selected = [...card.querySelectorAll('.stream-pill[data-selected="true"]')].map(el => el.dataset.stream);
+  if (!selected.length) {
+    // Nothing explicitly selected — use all streams
+    const all = [...card.querySelectorAll('.stream-pill')].map(el => el.dataset.stream);
+    if (!all.length) return;
+    selected.push(...all);
+  }
+  // Disable card so it can't be re-submitted
+  card.style.opacity = '0.5';
+  card.querySelectorAll('button,.stream-pill').forEach(el => el.style.pointerEvents = 'none');
+  // Inject selection as a user message and send it through the chat
+  const inp = document.getElementById('chat-input');
+  inp.value = selected.join(', ');
+  sendChat();
 }
 
 async function startFromCredCard(connectorName, inputId, docsUrl='') {
