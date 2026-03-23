@@ -266,8 +266,3 @@ Keeping the frontend as a single `index.html` with no bundler means anyone can r
 
 This prototype demonstrates the build-time pipeline and runtime service in full. The continuous health layer, credential vault, multi-tenant isolation, and code export features described in the full product strategy are production infrastructure concerns not included here.
 
----
-
-## License
-
-MIT
