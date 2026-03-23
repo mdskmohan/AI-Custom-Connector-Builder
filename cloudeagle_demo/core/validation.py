@@ -177,7 +177,7 @@ class ValidationStack:
 
         for path, value in all_strings:
             # Skip obviously safe fields
-            if any(skip in path for skip in ["retryable_codes", "pii_fields"]):
+            if any(skip in path for skip in ["retryable_codes"]):
                 continue
             # Skip URLs (they can be long and match generic patterns)
             if value.startswith("http"):

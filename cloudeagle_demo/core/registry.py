@@ -16,6 +16,7 @@ class ConnectorRegistry:
         self._registry = self._load()
 
     def _load(self) -> dict:
+        """Load registry from disk, returning an empty registry on failure."""
         if self.registry_file.exists():
             try:
                 with open(self.registry_file) as f:
@@ -29,6 +30,7 @@ class ConnectorRegistry:
             json.dump(self._registry, f, indent=2, default=str)
 
     def _next_version(self, name: str) -> str:
+        """Increment the patch segment of the connector's current semver string."""
         if name not in self._registry["connectors"]:
             return "1.0.0"
         current = self._registry["connectors"][name].get("current_version", "1.0.0")
@@ -92,6 +94,7 @@ class ConnectorRegistry:
         return list(self._registry["connectors"].values())
 
     def promote_to_production(self, name: str):
+        """Set the latest version of a connector to 'production' status."""
         if name in self._registry["connectors"]:
             connector = self._registry["connectors"][name]
             if connector["versions"]:
@@ -106,6 +109,7 @@ class ConnectorRegistry:
         return False
 
     def increment_sync_count(self, name: str, records: int = 0):
+        """Record a completed sync run — increments total_syncs and total_records."""
         if name in self._registry["connectors"]:
             self._registry["connectors"][name]["total_syncs"] += 1
             self._registry["connectors"][name].setdefault("total_records", 0)

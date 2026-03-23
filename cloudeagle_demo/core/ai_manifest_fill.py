@@ -75,7 +75,6 @@ CALENDLY_MANIFEST = {
         "retryable_codes": [429, 500, 502, 503],
         "max_retries": 3,
     },
-    "pii_fields": ["email", "name", "slug"],
 }
 
 GITHUB_MANIFEST = {
@@ -112,7 +111,6 @@ GITHUB_MANIFEST = {
         "retryable_codes": [429, 500, 502, 503],
         "max_retries": 3,
     },
-    "pii_fields": [],
 }
 
 GITHUB_FILLED_FIELDS = [
@@ -128,7 +126,6 @@ GITHUB_FILLED_FIELDS = [
     FilledField("streams[1].name", "contributors", "GET /repos/{owner}/{repo}/contributors — List contributors", "high"),
     FilledField("streams[1].path", "/repos/microsoft/vscode/contributors", "List contributors to microsoft/vscode", "high"),
     FilledField("error_handling.retry_strategy", "exponential_backoff", "Retry on rate limit and server errors", "medium"),
-    FilledField("pii_fields", [], "Public contributor data only", "medium"),
 ]
 
 
@@ -150,7 +147,6 @@ CALENDLY_FILLED_FIELDS = [
     FilledField("streams[1].incremental.cursor_field", "updated_at", "updated_at field tracks last modification time", "high"),
     FilledField("error_handling.retry_strategy", "exponential_backoff", "Retry with exponential backoff on rate limit or server errors", "medium"),
     FilledField("error_handling.retryable_codes", [429, 500, 502, 503], "Retry on 429 Too Many Requests and 5xx server errors", "high"),
-    FilledField("pii_fields", ["email", "name", "slug"], "User resources contain email, name, and scheduling URL slug", "medium"),
 ]
 
 
@@ -288,13 +284,14 @@ Return ONLY a JSON object (no markdown) with this exact structure:
         spec: ConnectorSpec,
         connector_name: str,
         progress_callback: Optional[Callable] = None,
+        streams_hint: list = None,
     ) -> tuple:
         """Fill manifest fields with citations. Returns (manifest_dict, filled_fields)."""
         if not self.client or not self.api_key:
             return _mock_fill_with_animation(connector_name, progress_callback)
 
         try:
-            return self._fill_with_claude(spec, connector_name, progress_callback)
+            return self._fill_with_claude(spec, connector_name, progress_callback, streams_hint)
         except Exception as e:
             # Fall back to mock on error
             if progress_callback:
@@ -306,8 +303,9 @@ Return ONLY a JSON object (no markdown) with this exact structure:
         spec: ConnectorSpec,
         connector_name: str,
         progress_callback: Optional[Callable] = None,
+        streams_hint: list = None,
     ) -> tuple:
-        prompt = self._build_prompt(spec, connector_name)
+        prompt = self._build_prompt(spec, connector_name, streams_hint)
 
         if progress_callback:
             progress_callback("__start__", None, "Sending request to Claude claude-sonnet-4-6...", "high")
@@ -337,7 +335,7 @@ Return ONLY a JSON object (no markdown) with this exact structure:
         manifest, filled_fields = self._build_manifest(result, connector_name, progress_callback)
         return manifest, filled_fields
 
-    def _build_prompt(self, spec: ConnectorSpec, connector_name: str) -> str:
+    def _build_prompt(self, spec: ConnectorSpec, connector_name: str, streams_hint: list = None) -> str:
         endpoints_sample = json.dumps(spec.endpoints[:8], indent=2)
         chunks_text = "\n".join(
             f"[{c['chunk_id']}] {c['text'][:300]}" for c in spec.raw_chunks[:5]
@@ -363,6 +361,7 @@ STRICT RULES:
 4. Use the ConnectorSpec data above as the primary source. If the spec is incomplete (e.g. HTML scraping returned few endpoints), use your training knowledge about this API to fill in accurate values — cite the API name + docs URL as source.
 5. For streams, include any required query params in the params object (e.g. lat/lon for location APIs, org_id, date fields, etc.)
 6. If a field is truly unknown and you have no knowledge of it: set value to null, confidence to "low"
+{f'7. IMPORTANT: Generate ONLY these streams (user-selected): {json.dumps(streams_hint)}. Use the exact name and path provided. Fill in record_selector, primary_key, pagination, and params from the API docs.' if streams_hint else ''}
 
 Return ONLY valid JSON — no markdown, no explanation:
 {{
@@ -398,7 +397,6 @@ Return ONLY valid JSON — no markdown, no explanation:
     }}
   ],
   "retry_codes": [429, 500, 502, 503],
-  "pii_fields": [],
   "confidence_scores": {{
     "auth_type": "high",
     "base_url": "high",
@@ -455,9 +453,6 @@ Return ONLY valid JSON — no markdown, no explanation:
              "Retry with exponential backoff on transient errors", "high")
         emit("error_handling.retryable_codes", result.get("retry_codes", [429, 500, 502, 503]),
              "Retry on rate limit (429) and server errors (5xx)", "high")
-        emit("pii_fields", result.get("pii_fields", []),
-             "PII fields identified from response schema", "medium")
-
         # Build manifest dict
         manifest = {
             "connector_type": "rest",
@@ -493,7 +488,6 @@ Return ONLY valid JSON — no markdown, no explanation:
                 "retryable_codes": result.get("retry_codes", [429, 500, 502, 503]),
                 "max_retries": 3,
             },
-            "pii_fields": result.get("pii_fields", []),
         }
 
         return manifest, filled_fields

@@ -68,6 +68,7 @@ class StateManager:
         return self._state.get("last_requests", {}).get(key)
 
     def add_sync_run(self, run: SyncRun):
+        """Append a new sync run to history, keeping the last 100 entries."""
         if not isinstance(self._state.get("sync_history"), list):
             self._state["sync_history"] = []
         self._state["sync_history"].append(asdict(run))

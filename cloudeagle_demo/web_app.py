@@ -33,9 +33,8 @@ from pathlib import Path
 import requests as _requests
 import anthropic as _anthropic
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse, HTMLResponse
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -86,7 +85,6 @@ state = StateManager()
 
 app = FastAPI(title="CloudEagle", lifespan=lifespan)
 BASE_DIR  = Path(__file__).parent
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 # In-memory session store for active builds and syncs (keyed by UUID)
 _sessions: dict[str, dict] = {}
@@ -103,8 +101,8 @@ CONNECTORS = {
 # ── Pages ─────────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def index():
+    return HTMLResponse((BASE_DIR / "templates" / "index.html").read_text())
 
 
 # ── Connectors ────────────────────────────────────────────────────────────────
@@ -245,7 +243,8 @@ def start_build(req: BuildReq):
                 emit({"type": "field_row", "row": field_rows[-1]})
 
             filler  = AIManifestFiller(api_key=claude_key)
-            manifest, filled = filler.fill(spec, req.connector, progress_callback=field_cb)
+            manifest, filled = filler.fill(spec, req.connector, progress_callback=field_cb,
+                                           streams_hint=req.streams_override or None)
 
             # ── Apply overrides collected by the chat assistant ───────────────
             # Base URL override — use exact API URL the user confirmed, not what the scraper guessed

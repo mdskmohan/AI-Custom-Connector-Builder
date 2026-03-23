@@ -399,11 +399,6 @@ input::placeholder{color:var(--t3);}
 .cred-card-input input{flex:1;height:30px;font-size:12px;}
 .cred-card-input button{height:30px;font-size:12px;padding:0 12px;}
 
-/* ── Artifacts panel tabs ── */
-.ap-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 8px;}
-.ap-tab{padding:8px 10px;font-size:12px;font-weight:500;color:var(--t2);border-bottom:2px solid transparent;cursor:pointer;position:relative;top:1px;background:var(--surface);transition:color .1s,border-color .1s;white-space:nowrap;}
-.ap-tab:hover{color:var(--t1);}
-.ap-tab.active{color:var(--t1);border-bottom-color:var(--t1);font-weight:600;}
 
 /* ── API Docs in artifacts panel ── */
 .api-docs-wrap{padding:2px 0;}
@@ -563,10 +558,7 @@ input::placeholder{color:var(--t3);}
           <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="11" y2="11"/><line x1="11" y1="1" x2="1" y2="11"/></svg>
         </button>
       </div>
-      <div class="ap-tabs">
-        <div class="ap-tab active" id="aptab-pipeline" onclick="switchArtifactsTab('pipeline')">Pipeline</div>
-        <div class="ap-tab" id="aptab-apidocs" onclick="switchArtifactsTab('apidocs')">Docs</div>
-      </div>
+      <div style="padding:0 12px 10px;font-size:12px;font-weight:600;color:var(--t2);">Pipeline</div>
 
       <div id="artifacts-body">
         <!-- Idle: explainer -->
@@ -595,12 +587,12 @@ input::placeholder{color:var(--t3);}
 
         <!-- Fields list — shown inline after AI Manifest Fill step completes -->
         <div id="fields-section" style="display:none;margin-top:0;">
-          <div style="border-left:2px solid var(--blue);margin-left:14px;padding-left:10px;margin-bottom:8px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-              <div style="font-size:11px;font-weight:600;color:var(--t2);" id="fields-count-label">AI-filled fields</div>
+          <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:0 0 10px 0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg);border-bottom:1px solid var(--border);">
+              <span style="font-size:11px;font-weight:600;color:var(--t2);" id="fields-count-label">AI-filled fields</span>
               <button onclick="toggleFieldsTable()" style="font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;padding:0;" id="fields-toggle-btn">Hide ▲</button>
             </div>
-            <div id="fields-table-wrap" style="display:flex;flex-direction:column;gap:6px;">
+            <div id="fields-table-wrap">
               <div id="fields-tbody"></div>
             </div>
           </div>
@@ -612,16 +604,6 @@ input::placeholder{color:var(--t3);}
           <div class="card" style="overflow-x:auto;" id="records-wrap"></div>
         </div>
 
-        <!-- API Docs tab (hidden by default) -->
-        <div id="ap-apidocs-section" style="display:none;padding-bottom:24px;">
-          <div id="ap-apidocs-content">
-            <div class="empty">
-              <div class="empty-icon">📄</div>
-              <div class="empty-title">API Docs</div>
-              <div class="empty-body">Docs will appear here once the AI has analyzed the API.</div>
-            </div>
-          </div>
-        </div>
 
       </div><!-- /artifacts-body -->
     </div><!-- /artifacts-panel -->
@@ -807,13 +789,6 @@ function openArtifacts() {
   document.getElementById('artifacts-panel').classList.add('open');
   const btn = document.getElementById('artifacts-btn');
   if (btn) btn.style.display = 'flex';
-  // Ensure pipeline tab is active by default when opening
-  document.getElementById('ap-apidocs-section').style.display = 'none';
-  if (_apTab !== 'pipeline') {
-    _apTab = 'pipeline';
-    document.getElementById('aptab-pipeline')?.classList.add('active');
-    document.getElementById('aptab-apidocs')?.classList.remove('active');
-  }
 }
 
 function toggleArtifacts() {
@@ -1494,24 +1469,26 @@ function handleBuildEvent(ev, es) {
       const step1 = document.getElementById('step-1');
       if (step1) step1.insertAdjacentElement('afterend', fs);
     }
-    const confColor = {high:'var(--green)',medium:'var(--amber)',low:'var(--red)'};
-    const confDot = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${confColor[ev.row.confidence]||'var(--t3)'};margin-right:4px;vertical-align:middle;"></span>`;
+    const confBg = {high:'#dcfce7',medium:'#fef9c3',low:'#fee2e2'};
+    const confFg = {high:'#16a34a',medium:'#a16207',low:'#dc2626'};
+    const conf = ev.row.confidence || 'low';
     const tbody = document.getElementById('fields-tbody');
+    const rowCount = tbody.children.length;
     const item = document.createElement('div');
-    item.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px 11px;';
+    item.style.cssText = `display:grid;grid-template-columns:1fr 1fr;gap:0;padding:7px 12px;border-bottom:1px solid var(--border);background:${rowCount%2===0?'var(--surface)':'var(--bg)'};`;
     item.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px;">
-        <code style="font-size:11px;color:var(--blue);font-weight:600;">${esc(ev.row.field)}</code>
-        <span style="font-size:10px;color:var(--t3);white-space:nowrap;">${confDot}${ev.row.confidence}</span>
+      <div style="padding-right:8px;">
+        <code style="font-size:11px;color:var(--blue);font-weight:600;word-break:break-all;display:block;margin-bottom:3px;">${esc(ev.row.field)}</code>
+        <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;background:${confBg[conf]};color:${confFg[conf]};">${conf}</span>
       </div>
-      <div style="font-size:12px;color:var(--t1);font-family:'JetBrains Mono',monospace;margin-bottom:3px;word-break:break-all;">${esc(String(ev.row.value))}</div>
-      ${ev.row.citation ? `<div style="font-size:11px;color:var(--t3);font-style:italic;">"${esc(ev.row.citation)}"</div>` : ''}`;
+      <div>
+        <div style="font-size:11px;color:var(--t1);font-family:'JetBrains Mono',monospace;word-break:break-all;line-height:1.4;">${esc(String(ev.row.value))}</div>
+        ${ev.row.citation ? `<div style="font-size:10px;color:var(--t3);margin-top:3px;font-style:italic;line-height:1.3;">${esc(ev.row.citation)}</div>` : ''}
+      </div>`;
     tbody.appendChild(item);
     // Update field count label
     const lbl = document.getElementById('fields-count-label');
     if (lbl) lbl.textContent = `${tbody.children.length} fields extracted`;
-  } else if (ev.type === 'connector_docs') {
-    renderApiDocs(ev.docs);
   } else if (ev.type === 'review_ready') {
     S.stepStatus[3] = 'running'; S.stepSummary[3] = 'Waiting for your approval';
     refreshStep(3); updateProgress();
@@ -3203,104 +3180,6 @@ function toggleFieldsTable() {
   if (btn) btn.textContent = collapsed ? 'Hide ▲' : 'Show ▼';
 }
 
-function switchArtifactsTab(tab) {
-  _apTab = tab;
-  ['pipeline','apidocs'].forEach(t => {
-    document.getElementById(`aptab-${t}`)?.classList.toggle('active', t===tab);
-  });
-  // Show/hide content sections
-  const pipelineSections = ['pipeline-explainer','pipeline-steps','fields-section','records-section'];
-  const show = tab === 'pipeline';
-  pipelineSections.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = id==='pipeline-steps' && show && S.stage!=='idle'
-      ? 'flex' : id==='pipeline-explainer' && show && S.stage==='idle'
-      ? 'flex' : show ? '' : 'none';
-  });
-  document.getElementById('ap-apidocs-section').style.display = tab==='apidocs' ? 'block' : 'none';
-  // If the docs tab is empty (page was refreshed after build), load from registry
-  if (tab === 'apidocs' && S.connector) {
-    const content = document.getElementById('ap-apidocs-content');
-    if (content && content.querySelector('.empty')) {
-      api(`/api/connectors/${encodeURIComponent(S.connector)}`).then(conn => {
-        const docs = (conn.versions||[{}]).slice(-1)[0]?.connector_docs;
-        if (docs?.name) renderApiDocs(docs);
-      }).catch(()=>{});
-    }
-  }
-  if (tab === 'pipeline') {
-    // restore pipeline display logic
-    if (S.stage === 'idle') {
-      document.getElementById('pipeline-explainer').style.display = 'flex';
-      document.getElementById('pipeline-steps').style.display = 'none';
-    } else {
-      document.getElementById('pipeline-explainer').style.display = 'none';
-      document.getElementById('pipeline-steps').style.display = 'flex';
-    }
-    const fs = document.getElementById('fields-section');
-    if (fs && fs.querySelector('#fields-tbody')?.children.length) fs.style.display = 'block';
-    const rs = document.getElementById('records-section');
-    // keep display as-is
-  }
-}
-
-function renderApiDocs(docs) {
-  if (!docs || !docs.name) return;
-  const el = document.getElementById('ap-apidocs-content');
-  if (!el) return;
-
-  const authSection = docs.auth ? `
-  <div class="api-doc-section">
-    <div class="api-doc-sec-head">Authentication</div>
-    <div class="api-doc-sec-body">
-      <div class="api-doc-row"><span class="api-doc-label">Type</span><span class="api-doc-val">${esc(docs.auth.type||'—')}</span></div>
-      <div class="api-doc-row"><span class="api-doc-label">Credential</span><span class="api-doc-val">${esc(docs.auth.credential_label||'—')}</span></div>
-      ${docs.auth.how_to_get ? `<div class="api-doc-row"><span class="api-doc-label">How to get</span><span class="api-doc-val">${Array.isArray(docs.auth.how_to_get) ? docs.auth.how_to_get.map((s,i)=>`${i+1}. ${esc(s)}`).join('<br>') : esc(docs.auth.how_to_get)}</span></div>` : ''}
-    </div>
-  </div>` : '';
-
-  const streamsSection = (docs.streams||[]).length ? `
-  <div class="api-doc-section">
-    <div class="api-doc-sec-head">Streams</div>
-    <div class="api-doc-sec-body" style="padding:8px 14px;">
-      ${docs.streams.map(s=>{
-        const furl = s.path && (docs.base_url||'').startsWith('http') ? (docs.base_url||'').replace(/\/$/,'')+s.path : '';
-        const pathEl = s.path ? (furl ? `<a href="${esc(furl)}" target="_blank" rel="noopener" style="font-size:10px;font-weight:400;color:var(--blue);font-family:'JetBrains Mono',monospace;text-decoration:none;">${esc(s.path)} ↗</a>` : `<span style="font-size:10px;font-weight:400;color:var(--t3);font-family:'JetBrains Mono',monospace;">${esc(s.path)}</span>`) : '';
-        return `<div class="api-stream-row"><div class="api-stream-name">${esc(s.name||'')} ${pathEl}</div><div class="api-stream-desc">${esc(s.description||'')}</div></div>`;
-      }).join('')}
-    </div>
-  </div>` : '';
-
-  const rateLimitSection = docs.rate_limits ? `
-  <div class="api-doc-section">
-    <div class="api-doc-sec-head">Rate limits</div>
-    <div class="api-doc-sec-body"><div class="api-doc-row"><span class="api-doc-label">Limits</span><span class="api-doc-val">${esc(docs.rate_limits)}</span></div></div>
-  </div>` : '';
-
-  el.innerHTML = `<div class="api-docs-wrap">
-    <div class="api-doc-section">
-      <div class="api-doc-sec-head">About</div>
-      <div class="api-doc-sec-body">
-        <div class="api-doc-row"><span class="api-doc-label">Name</span><span class="api-doc-val" style="font-weight:600;">${esc(docs.name||'')}</span></div>
-        <div class="api-doc-row"><span class="api-doc-label">Description</span><span class="api-doc-val">${esc(docs.description||'')}</span></div>
-        <div class="api-doc-row"><span class="api-doc-label">Base URL</span><span class="api-doc-val"><code style="font-size:11px;">${esc(docs.base_url||'')}</code></span></div>
-        ${docs.website ? `<div class="api-doc-row"><span class="api-doc-label">Docs</span><span class="api-doc-val"><a href="${esc(docs.website)}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none;font-size:12px;">${esc(docs.website)} ↗</a></span></div>` : ''}
-      </div>
-    </div>
-    ${authSection}${streamsSection}${rateLimitSection}
-    ${(docs.notes||[]).length ? `<div class="api-doc-section">
-      <div class="api-doc-sec-head">Notes</div>
-      <div class="api-doc-sec-body">${docs.notes.map(n=>`<div class="api-doc-row" style="margin-bottom:6px;">
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--t3)" stroke-width="1.75" style="flex-shrink:0;margin-top:2px;"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5.5v.5"/></svg>
-        <span class="api-doc-val">${esc(n)}</span></div>`).join('')}
-      </div>
-    </div>` : ''}
-  </div>`;
-
-  // Auto-switch to Docs tab so user sees them
-  switchArtifactsTab('apidocs');
-  document.getElementById('aptab-apidocs').style.fontWeight = '600';
-}
 
 // ─────────────────────────────────────────
 // CONFIGURE DOCS TAB
