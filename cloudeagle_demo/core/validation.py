@@ -73,12 +73,23 @@ def _apply_record_selector(data, selector: str):
 
 
 class ValidationStack:
+    """
+    Four-layer connector manifest validation pipeline.
+
+    Layers (run in order):
+      1. Schema      — required fields, enum values, base_url format, stream structure.
+      2. Secret scan — regex patterns to detect accidentally embedded credentials.
+      3. Live probe  — HTTP connectivity, auth handshake, and data probe against real API.
+      4. Contract    — verifies the record selector actually returns usable records.
+    """
+
     def __init__(self, log_callback: Optional[Callable] = None):
         self.log = log_callback or (lambda msg, level="info": None)
 
     # ── Layer 1: Schema Validation ─────────────────────────────────────────
 
     def run_layer1_schema(self, manifest: dict) -> ValidationResult:
+        """Validate required fields, enum constraints, and stream structure."""
         start = time.time()
         errors = []
         warnings = []
@@ -165,6 +176,7 @@ class ValidationStack:
     # ── Layer 2: Secret Scan ───────────────────────────────────────────────
 
     def run_layer2_secret_scan(self, manifest: dict) -> ValidationResult:
+        """Scan all string values in the manifest for embedded credential patterns."""
         start = time.time()
         matches = []
         fields_scanned = 0
@@ -217,6 +229,7 @@ class ValidationStack:
     # ── Layer 3: Live API Probe ────────────────────────────────────────────
 
     def run_layer3_probe(self, manifest: dict, credential: str = "") -> ValidationResult:
+        """Make live HTTP calls to verify connectivity, auth, and data access."""
         start = time.time()
         probes = []
         errors = []
@@ -292,6 +305,7 @@ class ValidationStack:
         )
 
     def _build_auth_headers(self, auth_type: str, credential: str, manifest: dict) -> dict:
+        """Build HTTP headers carrying the credential (bearer / api_key / basic)."""
         headers = {"User-Agent": "CloudEagle-Validator/1.0"}
         if not credential:
             return headers

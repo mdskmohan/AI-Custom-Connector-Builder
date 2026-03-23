@@ -35,10 +35,20 @@ class ConnectorSpec:
 
 
 class DocumentIngester:
+    """
+    Fetches and parses API documentation into a structured ConnectorSpec.
+
+    Strategy (in order):
+      1. Special-case GitHub — fetch from the canonical raw OpenAPI description repo.
+      2. Probe common OpenAPI/Swagger paths on the API's root domain.
+      3. Fall back to HTML scraping if no machine-readable spec is found.
+    """
+
     def __init__(self, log_callback: Optional[Callable] = None):
         self.log = log_callback or (lambda msg, level="info": None)
 
     def ingest(self, url: str, connector_name: str) -> ConnectorSpec:
+        """Entry point — try OpenAPI first, fall back to HTML scraper."""
         self.log(f"Starting ingestion for {connector_name}", "info")
         self.log(f"Source URL: {url}", "info")
 
@@ -53,6 +63,7 @@ class DocumentIngester:
         return self._scrape_html(url)
 
     def _try_openapi(self, base_url: str) -> Optional[dict]:
+        """Probe known OpenAPI/Swagger paths. Returns parsed JSON or None."""
         # Special case for GitHub
         if "github.com" in base_url or "api.github.com" in base_url:
             self.log(f"GitHub detected — fetching from canonical OpenAPI location", "info")
@@ -91,6 +102,7 @@ class DocumentIngester:
         return None
 
     def _parse_openapi(self, spec: dict, source_url: str) -> ConnectorSpec:
+        """Parse an OpenAPI 3.x or Swagger 2.x spec dict into a ConnectorSpec."""
         info = spec.get("info", {})
         title = info.get("title", "Unknown API")
         version = spec.get("openapi") or spec.get("swagger", "unknown")
@@ -200,6 +212,7 @@ class DocumentIngester:
         )
 
     def _extract_auth(self, spec: dict) -> dict:
+        """Infer auth type from securitySchemes or info description."""
         components = spec.get("components", spec.get("securityDefinitions", {}))
         if isinstance(components, dict):
             security_schemes = components.get("securitySchemes", components)
@@ -238,6 +251,7 @@ class DocumentIngester:
         return {"type": "unknown"}
 
     def _extract_rate_limit(self, spec: dict) -> Optional[dict]:
+        """Extract rate limit from x-ratelimit extensions or info description text."""
         # Check x-ratelimit extensions
         info = spec.get("info", {})
         for key in ["x-ratelimit", "x-rate-limit", "x-throttle"]:
@@ -253,6 +267,7 @@ class DocumentIngester:
         return None
 
     def _detect_pagination(self, endpoints: list) -> Optional[dict]:
+        """Heuristically detect the pagination strategy from endpoint parameter names."""
         # Check for common pagination patterns in parameters
         cursor_params = {"page_token", "cursor", "next_page", "after", "before"}
         offset_params = {"offset", "skip"}
