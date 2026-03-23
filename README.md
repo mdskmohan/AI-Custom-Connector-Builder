@@ -15,7 +15,7 @@ Built as a case study demonstrating a five-layer connector platform architecture
    - Uses Claude to fill every manifest field with a grounded citation from the source
    - Runs 4 validation layers (schema · secret scan · live API probe · contract test)
 3. **Human Review** — You see every AI-filled field with its citation and confidence score. Approve to register the connector.
-4. **Connector Registry** — Approved connectors are stored with full version history (draft → beta → production lifecycle).
+4. **Connector Registry** — Approved connectors are stored with full version history (beta → production lifecycle).
 5. **Runtime Sync** — Registered connectors can be synced on demand. The runtime handles auth, pagination, checkpointing, and writes records to a local SQLite destination.
 6. **Observability** — Sync history, per-stream stats, and live request/response debug panel.
 
@@ -52,7 +52,7 @@ Build Pipeline  [runs once per connector]
         Approve → save to registry as v1.0.0
 
 Registry  [data/registry.json]
-  Versioned YAML · draft → beta → production
+  Versioned YAML · beta → production
   Per-connector: version history, sync counts, total records
 
 Runtime Service  [runs on demand]
@@ -258,6 +258,13 @@ Keeping the frontend as a single `index.html` with no bundler means anyone can r
 | Concurrency | Single-threaded sync | Worker pool with backpressure |
 | State storage | JSON files | DynamoDB / Postgres |
 | Schema evolution | Not handled | Schema Evolver service with migration |
+| Draft state | Not implemented — build goes straight to beta | Pre-approval draft stage with AI-generated, unvalidated manifest |
+| Continuous health layer | Not implemented | Periodic re-validation against live API; auto-demotion on drift |
+| Credential vault | Plain string in sync request | Three-path vault: env var, secrets manager, UI-entered (session-only) |
+| Multi-tenant isolation | Single global registry | Per-tenant namespacing, RBAC, audit log |
+| Code export | Not implemented | Export connector as Python/Singer tap or Airbyte spec |
+
+This prototype demonstrates the build-time pipeline and runtime service in full. The continuous health layer, credential vault, multi-tenant isolation, and code export features described in the full product strategy are production infrastructure concerns not included here.
 
 ---
 
