@@ -97,8 +97,16 @@ class ConnectorRegistry:
         """Set the latest version of a connector to 'production' status."""
         if name in self._registry["connectors"]:
             connector = self._registry["connectors"][name]
-            if connector["versions"]:
+            if connector.get("versions"):
                 connector["versions"][-1]["status"] = "production"
+            self._save()
+
+    def demote_to_sandbox(self, name: str):
+        """Revert the latest version of a connector back to 'sandbox' status."""
+        if name in self._registry["connectors"]:
+            connector = self._registry["connectors"][name]
+            if connector.get("versions"):
+                connector["versions"][-1]["status"] = "sandbox"
             self._save()
 
     def delete_connector(self, name: str) -> bool:

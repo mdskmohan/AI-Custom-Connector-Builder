@@ -152,10 +152,7 @@ def promote(name: str):
 
 @app.post("/api/connectors/{name}/demote")
 def demote(name: str):
-    connector = reg.get_connector(name)
-    if connector and connector.get("versions"):
-        connector["versions"][-1]["status"] = "sandbox"
-        reg._save()
+    reg.demote_to_sandbox(name)
     return {"ok": True}
 
 
@@ -534,16 +531,19 @@ def sync_events(sync_id: str):
 
     def generate():
         q = session["queue"]
-        while True:
-            try:
-                ev = q.get(timeout=120)
-                if ev.get("type") == "_eof":
-                    break
-                yield f"data: {json.dumps(ev)}\n\n"
-                if ev.get("type") in ("done", "error"):
-                    break
-            except queue.Empty:
-                yield 'data: {"type":"ping"}\n\n'
+        try:
+            while True:
+                try:
+                    ev = q.get(timeout=120)
+                    if ev.get("type") == "_eof":
+                        break
+                    yield f"data: {json.dumps(ev)}\n\n"
+                    if ev.get("type") in ("done", "error"):
+                        break
+                except queue.Empty:
+                    yield 'data: {"type":"ping"}\n\n'
+        finally:
+            _sessions.pop(sync_id, None)  # clean up session once streaming is done
 
     return StreamingResponse(
         generate(),
@@ -579,7 +579,6 @@ class TestReq(BaseModel):
 @app.get("/api/data/{connector}/{stream}")
 def preview_data(connector: str, stream: str, limit: int = 20):
     """Return the last N synced records for a connector stream from the destination DB."""
-    from .core.runtime import SyncRuntime
     rt = SyncRuntime(manifest={}, credential="")
     records = rt.query_destination(connector, stream, limit=limit)
     return {"records": records, "count": len(records)}
@@ -621,9 +620,10 @@ def test_connection(req: TestReq):
                         "status": str(e), "url": base_url, "method": "GET", "note": ""})
 
     for s in (m.get("streams") or [])[:3]:
+        endpoint_url = base_url
+        method = (s.get("method") or "GET").upper()
         try:
             params = {**s.get("params", {}), **auth_params}
-            method = (s.get("method") or "GET").upper()
             path = s.get("path", "")
             if path and not path.startswith("/"):
                 path = "/" + path
@@ -650,8 +650,8 @@ def test_connection(req: TestReq):
                             "method": method, "note": note})
         except Exception as e:
             results.append({"name": s.get("name", ""), "ok": False,
-                            "status": str(e), "url": endpoint_url if 'endpoint_url' in dir() else "",
-                            "method": method if 'method' in dir() else "GET", "note": ""})
+                            "status": str(e), "url": endpoint_url,
+                            "method": method, "note": ""})
 
     return {"results": results}
 
@@ -828,11 +828,18 @@ def get_table_data(table_name: str, limit: int = 100):
         return {"columns": [], "rows": []}
     try:
         conn = sqlite3.connect(str(DB_PATH))
-        cur  = conn.execute(f'SELECT * FROM "{table_name}" LIMIT {limit}')
+        # Validate table_name against the actual tables in the DB to prevent SQL injection
+        known = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+        if table_name not in known:
+            conn.close()
+            raise HTTPException(404, f"Table '{table_name}' not found")
+        cur  = conn.execute(f'SELECT * FROM "{table_name}" LIMIT ?', (limit,))
         cols = [d[0] for d in cur.description]
         rows = [list(r) for r in cur.fetchall()]
         conn.close()
         return {"columns": cols, "rows": rows}
+    except HTTPException:
+        raise
     except Exception as e:
         return {"columns": [], "rows": [], "error": str(e)}
 
