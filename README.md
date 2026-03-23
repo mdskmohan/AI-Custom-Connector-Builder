@@ -6,6 +6,12 @@ Built as a case study demonstrating a five-layer connector platform architecture
 
 ---
 
+## Demo Video
+
+> Record the demo video by running the steps in [Generating the demo video](#generating-the-demo-video) below, then upload the rendered `demo-video/out/demo.mp4` and replace this line with the embed.
+
+---
+
 ## What It Does
 
 1. **AI Builder (Chat)** — Describe the API you want to connect in plain English. The assistant asks clarifying questions (auth type, which streams to sync), then emits a structured build request.
@@ -234,6 +240,57 @@ Keeping the frontend as a single `index.html` with no bundler means anyone can r
 | `GET` | `/api/observability` | Sync history, checkpoints, stats |
 | `GET` | `/api/destination/tables` | List SQLite destination tables |
 | `GET` | `/api/destination/table/{name}` | Query a destination table (up to 200 rows) |
+
+---
+
+## Generating the demo video
+
+The demo video is built with **Playwright** (browser automation) + **Remotion** (video rendering).
+
+### Prerequisites
+
+```bash
+# In the repo root — install Playwright
+npm install playwright
+npx playwright install chromium
+
+# In the demo-video folder — install Remotion
+cd demo-video && npm install && cd ..
+
+# ffmpeg must be on your PATH (Remotion uses it to encode)
+brew install ffmpeg          # macOS
+```
+
+### Steps
+
+**1. Start the app** (in one terminal):
+```bash
+cd cloudeagle_demo
+pip install -r requirements.txt
+uvicorn web_app:app --reload --port 8000
+```
+
+**2. Capture screenshots** (in another terminal):
+```bash
+node scripts/capture_demo.js
+```
+This opens a visible browser, walks through the full flow, and saves ~15 screenshots to `demo-video/public/frames/`.
+
+**3. Render the video**:
+```bash
+cd demo-video
+npm run render
+# Output: demo-video/out/demo.mp4
+```
+
+**4. (Optional) Preview in Remotion Studio** before rendering:
+```bash
+cd demo-video
+npm start
+# Opens http://localhost:3000
+```
+
+Upload `demo-video/out/demo.mp4` to Loom / YouTube / GitHub and replace the placeholder at the top of this README with the embed link.
 
 ---
 
