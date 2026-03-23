@@ -14,7 +14,7 @@ Built as a case study demonstrating a five-layer connector platform architecture
    - Uses Claude to fill every manifest field with a grounded citation from the source
    - Runs 4 validation layers (schema · secret scan · live API probe · contract test)
 3. **Human Review** — You see every AI-filled field with its citation and confidence score. Approve to register the connector.
-4. **Connector Registry** — Approved connectors are stored with full version history (draft → sandbox → production lifecycle).
+4. **Connector Registry** — Approved connectors are stored with full version history (draft → beta → production lifecycle).
 5. **Runtime Sync** — Registered connectors can be synced on demand. The runtime handles auth, pagination, checkpointing, and writes records to a local SQLite destination.
 6. **Observability** — Sync history, per-stream stats, and live request/response debug panel.
 
@@ -51,7 +51,7 @@ Build Pipeline  [runs once per connector]
         Approve → save to registry as v1.0.0
 
 Registry  [data/registry.json]
-  Versioned YAML · draft → sandbox → production
+  Versioned YAML · draft → beta → production
   Per-connector: version history, sync counts, total records
 
 Runtime Service  [runs on demand]
@@ -163,7 +163,7 @@ The `--reload` flag hot-reloads the server on file changes — useful during dev
 
 ### Publish a connector
 
-In the Configure page header, use **Publish** to promote from `sandbox` to `production`, or **Unpublish** to revert. Delete removes the connector entirely (with confirmation).
+In the Configure page header, use **Publish** to promote from `beta` to `production`, or **Unpublish** to revert. Delete removes the connector entirely (with confirmation).
 
 ---
 
@@ -222,7 +222,7 @@ Keeping the frontend as a single `index.html` with no bundler means anyone can r
 | `PUT` | `/api/connectors/{name}` | Update connector manifest / docs |
 | `DELETE` | `/api/connectors/{name}` | Delete connector |
 | `POST` | `/api/connectors/{name}/promote` | Promote to production |
-| `POST` | `/api/connectors/{name}/demote` | Revert to sandbox |
+| `POST` | `/api/connectors/{name}/demote` | Revert to beta |
 | `POST` | `/api/build/start` | Start AI build pipeline → returns `build_id` |
 | `GET` | `/api/build/{id}/events` | SSE stream for build progress |
 | `POST` | `/api/build/{id}/approve` | Approve build and save to registry |

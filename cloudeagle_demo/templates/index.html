@@ -1601,7 +1601,7 @@ async function loadConnectors() {
       <div class="mp-metric-card" style="border-left-color:#3B82F6;">
         <strong>${s.total}</strong>
         <div class="mp-metric-label">Total Connectors</div>
-        <div class="mp-metric-sub">${s.production} production · ${s.sandbox} beta</div>
+        <div class="mp-metric-sub">${s.production} production · ${s.beta} beta</div>
       </div>
       <div class="mp-metric-card" style="border-left-color:#10B981;">
         <strong>${activeConns}</strong>
@@ -1648,12 +1648,12 @@ function renderConnectorsSections() {
   const prodPill  = `<span class="pill pill-green">Production</span>`;
   const statusPill = c => {
     const vi = (c.versions||[{}]).slice(-1)[0];
-    return (vi.status||'sandbox') === 'production' ? prodPill : betaPill;
+    return (vi.status||'beta') === 'production' ? prodPill : betaPill;
   };
 
   const makeTile = (conn, builtinFlag) => {
     const vi      = (conn.versions||[{}]).slice(-1)[0];
-    const status  = vi.status || 'sandbox';
+    const status  = vi.status || 'beta';
     const m       = vi.manifest_dict || {};
     const streams = (m.streams || []);
     const acc     = calcManifestAccuracy(m);
@@ -1702,11 +1702,12 @@ function renderConnectorsSections() {
   // Apply search + type + status filters
   const matchesFilter = (conn) => {
     const vi     = (conn.versions||[{}]).slice(-1)[0];
-    const status = vi.status || 'sandbox';
+    const status = vi.status || 'beta';
     const builtin = isBuiltin(conn);
     if (typeFilter === 'inbuilt'  && !builtin) return false;
     if (typeFilter === 'custom'   &&  builtin) return false;
-    if (statusFilter === 'beta'       && status !== 'sandbox')    return false;
+    // treat legacy 'sandbox' value as 'beta' for backward compat
+    if (statusFilter === 'beta'       && status !== 'beta' && status !== 'sandbox') return false;
     if (statusFilter === 'production' && status !== 'production') return false;
     if (search && !conn.name.toLowerCase().includes(search)) return false;
     return true;
@@ -1850,7 +1851,7 @@ async function openEdit(name) {
 
 function renderEditPage(conn, vi) {
   const m = S.editManifest;
-  const status = vi.status||'sandbox';
+  const status = vi.status||'beta';
   const icon = ICONS[conn.name.toLowerCase()]||'⬡';
   const logoUrl = getLogoUrl(m.base_url);
   const streams = m.streams||[];
@@ -2574,7 +2575,7 @@ async function saveEdit() {
     const vi = (c.versions || [{}]).slice(-1)[0];
     await api(`/api/connectors/${encodeURIComponent(S.editConn)}`, {
       method: 'PUT',
-      body: JSON.stringify({manifest: m, status: vi.status || 'sandbox', field_accuracy: vi.field_accuracy || 0}),
+      body: JSON.stringify({manifest: m, status: vi.status || 'beta', field_accuracy: vi.field_accuracy || 0}),
     });
     // Update in-memory manifest so subsequent collects are consistent
     S.editManifest  = m;
@@ -2966,7 +2967,7 @@ async function saveManifestEdit() {
     const vi = (c.versions || [{}]).slice(-1)[0];
     await api(`/api/connectors/${encodeURIComponent(S.editConn)}`, {
       method: 'PUT',
-      body: JSON.stringify({manifest: parsed, status: vi.status || 'sandbox', field_accuracy: vi.field_accuracy || 0}),
+      body: JSON.stringify({manifest: parsed, status: vi.status || 'beta', field_accuracy: vi.field_accuracy || 0}),
     });
     S.editDirty = false;
     // Re-render everything so Connection/Streams tabs reflect new manifest
@@ -3190,7 +3191,7 @@ async function _saveDocs(d) {
   const vi = (c.versions||[{}]).slice(-1)[0];
   await api(`/api/connectors/${encodeURIComponent(S.editConn)}`, {
     method: 'PUT',
-    body: JSON.stringify({ manifest: S.editManifest, status: vi.status||'sandbox', field_accuracy: vi.field_accuracy||0, connector_docs: d }),
+    body: JSON.stringify({ manifest: S.editManifest, status: vi.status||'beta', field_accuracy: vi.field_accuracy||0, connector_docs: d }),
   });
   S._editDocs = d;
 }

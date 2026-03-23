@@ -70,7 +70,7 @@ async def lifespan(app: FastAPI):
             ]
             acc = sum(1 for f in fields if f.confidence == "high") / max(len(fields), 1)
             reg.save_connector(
-                name=cname, manifest=manifest, status="sandbox",
+                name=cname, manifest=manifest, status="beta",
                 field_accuracy=acc, fingerprint=f"seed_{cname.lower()}",
                 filled_fields=fields_out,
                 connector_docs=_mock_docs(cname),
@@ -122,7 +122,7 @@ def get_connector(name: str):
 
 class SaveConnectorReq(BaseModel):
     manifest: dict
-    status: str = "sandbox"
+    status: str = "beta"
     field_accuracy: float = 0.95
     connector_docs: dict = None
 
@@ -152,7 +152,7 @@ def promote(name: str):
 
 @app.post("/api/connectors/{name}/demote")
 def demote(name: str):
-    reg.demote_to_sandbox(name)
+    reg.demote_to_beta(name)
     return {"ok": True}
 
 
@@ -387,7 +387,7 @@ def approve_build(build_id: str, req: ApproveReq):
     r   = session["result"]
     acc = sum(1 for f in r["fields"] if f.get("confidence") != "low") / max(len(r["fields"]), 1)
     ver = reg.save_connector(
-        name=req.connector, manifest=r["manifest"], status="sandbox",
+        name=req.connector, manifest=r["manifest"], status="beta",
         field_accuracy=acc, fingerprint=r["fingerprint"],
         filled_fields=r["fields"], connector_docs=r.get("connector_docs"),
     )

@@ -42,7 +42,7 @@ class ConnectorRegistry:
         self,
         name: str,
         manifest: dict,
-        status: str = "sandbox",
+        status: str = "beta",
         field_accuracy: float = 0.95,
         fingerprint: str = None,
         filled_fields: list = None,
@@ -101,12 +101,12 @@ class ConnectorRegistry:
                 connector["versions"][-1]["status"] = "production"
             self._save()
 
-    def demote_to_sandbox(self, name: str):
-        """Revert the latest version of a connector back to 'sandbox' status."""
+    def demote_to_beta(self, name: str):
+        """Revert the latest version of a connector back to 'beta' status."""
         if name in self._registry["connectors"]:
             connector = self._registry["connectors"][name]
             if connector.get("versions"):
-                connector["versions"][-1]["status"] = "sandbox"
+                connector["versions"][-1]["status"] = "beta"
             self._save()
 
     def delete_connector(self, name: str) -> bool:
@@ -143,7 +143,7 @@ class ConnectorRegistry:
             1 for c in connectors
             if c.get("versions") and c["versions"][-1].get("status") == "production"
         )
-        sandbox = total - production
+        beta = total - production
         accuracies = [
             c["versions"][-1].get("field_accuracy", 0)
             for c in connectors if c.get("versions")
@@ -152,6 +152,6 @@ class ConnectorRegistry:
         return {
             "total": total,
             "production": production,
-            "sandbox": sandbox,
+            "beta": beta,
             "avg_accuracy": avg_accuracy,
         }
