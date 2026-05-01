@@ -23,45 +23,181 @@ Built as a case study demonstrating a five-layer connector platform architecture
 
 ## System Architecture
 
+CloudEagle is built around a single insight: **every REST connector is the same code path running against a different manifest.** The only thing that changes per connector is a YAML document describing auth, endpoints, and pagination. Every other component — ingestion, AI extraction, validation, runtime, destination — is generic and reused unchanged.
+
+### The reuse boundary: the manifest
+
+The manifest is the contract. Once a connector reaches the registry it looks like this regardless of which API it represents:
+
+```yaml
+name: github
+base_url: https://api.github.com
+auth:    { type: bearer }                     # or api_key (header|query), basic, none
+streams:
+  - name: repos
+    path: /user/repos
+    method: GET
+    record_selector: $[*]                     # JSONPath into the response
+    pagination: { strategy: link_header }     # or cursor | offset | page_number | none
+    params: { per_page: 30 }
 ```
-Entry
-  ├── API Docs URL          (e.g. https://developer.calendly.com/api-docs)
-  ├── Natural Language      (chat: "sync pokemon and moves from PokeAPI")
-  └── Built-in Connectors   (GitHub, Calendly — pre-computed manifests)
 
-Build Pipeline  [runs once per connector]
-  ├── Step 0 — Documentation Ingestion
-  │     OpenAPI-first → HTML scraper fallback
-  │     Output: ConnectorSpec (endpoints, auth, rate limit, pagination)
-  │
-  ├── Step 1 — AI Manifest Fill  [Claude claude-sonnet-4-6]
-  │     Grounded extraction — every field has a citation from the source
-  │     Confidence scoring (high / medium / low) per field
-  │     User-selected streams injected into prompt upfront
-  │     Output: Draft manifest YAML
-  │
-  ├── Step 2 — 4-Layer Validation
-  │     Layer 1: JSON Schema validation
-  │     Layer 2: Secret / credential scan (regex patterns)
-  │     Layer 3: Live API probe (HTTP GET to base_url)
-  │     Layer 4: Contract test (field presence check)
-  │     Output: Validated manifest
-  │
-  └── Step 3 — Human Review
-        Citations shown, low-confidence fields flagged
-        Approve → save to registry as v1.0.0
+Adding a new connector means producing one of these. It does **not** mean writing new Python.
 
-Registry  [data/registry.json]
-  Versioned YAML · beta → production
-  Per-connector: version history, sync counts, total records
+### Current state — pipeline & component reuse
 
-Runtime Service  [runs on demand]
-  ├── Auth Handler    — bearer, api_key (header or query param)
-  ├── Partitioner     — offset, cursor, link_header, none pagination
-  ├── State Manager   — per-stream checkpoints (resumable syncs)
-  ├── Destination     — SQLite (demo) — swappable for warehouse/lake
-  └── Observability   — per-request debug capture, sync history
+```mermaid
+flowchart LR
+    subgraph Entry["Entry — per connector"]
+        E1[API Docs URL]
+        E2[NL chat request]
+        E3[Built-in seeds]
+    end
+
+    subgraph Build["Build Pipeline — generic, runs once per connector"]
+        B0[DocumentIngester<br/>OpenAPI → HTML fallback]
+        B1[AI Manifest Fill<br/>Claude + citations]
+        B2[4-Layer Validation<br/>schema · secrets · probe · contract]
+        B3[Human Review<br/>citations + confidence]
+    end
+
+    R[(Registry<br/>versioned YAML<br/>beta → prod)]
+
+    subgraph Runtime["SyncRuntime — generic, runs on every sync"]
+        RT1[Auth Handler<br/>bearer · api_key · basic]
+        RT2[Partitioner<br/>cursor · offset · link_header]
+        RT3[State Manager<br/>per-stream checkpoints]
+        RT4[Destination Writer<br/>SQLite today]
+        RT5[Observability<br/>req/resp capture]
+    end
+
+    D[(destination.db)]
+
+    E1 --> B0
+    E2 --> B0
+    E3 --> B0
+    B0 --> B1 --> B2 --> B3 --> R
+    R --> RT1 --> RT2 --> RT3 --> RT4 --> D
+    RT1 -.-> RT5
+    RT2 -.-> RT5
+    RT3 -.-> RT5
 ```
+
+### How the same components serve every connector
+
+The diagram below shows what is genuinely shared vs. what is connector-specific. The shared column is ~95% of the code; the per-connector column is the manifest plus a handful of small branches (e.g. Calendly's `/users/me` context fetch, GitHub's canonical OpenAPI URL).
+
+```mermaid
+flowchart TB
+    subgraph Connectors["Connectors — only the manifest differs"]
+        C1[GitHub<br/>auth: bearer<br/>pagination: link_header]
+        C2[Calendly<br/>auth: bearer<br/>pagination: cursor]
+        C3[PokeAPI<br/>auth: none<br/>pagination: offset]
+        C4[OpenWeatherMap<br/>auth: api_key in query<br/>pagination: none]
+        C5[Custom API ...]
+    end
+
+    subgraph Shared["Shared platform — one implementation"]
+        I[DocumentIngester]
+        AI[AI Manifest Fill<br/>single Claude prompt]
+        V[4-Layer Validator]
+        RT[SyncRuntime<br/>auth · paginate · checkpoint]
+        ST[StateManager]
+        DST[Destination Writer]
+    end
+
+    C1 --> I
+    C2 --> I
+    C3 --> I
+    C4 --> I
+    C5 --> I
+    I --> AI --> V --> RT
+    RT --> ST
+    RT --> DST
+```
+
+**What the runtime dispatches on, not branches on:**
+
+| Dimension | Manifest field | Runtime behavior |
+|-----------|---------------|------------------|
+| Auth | `auth.type` | `_build_headers()` selects bearer / api_key-header / api_key-query / none |
+| Pagination | `pagination.strategy` | `_fetch_page()` selects link_header / cursor / offset / none |
+| Record shape | `record_selector` (JSONPath) | `_apply_selector()` extracts records from any JSON shape |
+| Destination table | `{connector}_{stream}` | `_create_table()` infers SQL types from first record |
+| Checkpoints | `pagination.cursor_field` | `StateManager` persists last cursor per (connector, stream) |
+
+Adding support for a new auth type or pagination strategy is a single dispatch branch — it instantly applies to every connector that declares it in its manifest.
+
+### Future state
+
+The current build covers ingestion → fill → validate → review → registry → sync. The future state extends each layer with the production concerns called out in [Limitations](#limitations-demo-scope):
+
+```mermaid
+flowchart LR
+    subgraph Entry["Entry"]
+        E1[Docs URL]
+        E2[NL chat]
+        E3[Code import<br/>existing Singer/Airbyte]
+    end
+
+    subgraph Build["Build Pipeline"]
+        B0[DocumentIngester]
+        B1[AI Manifest Fill]
+        B2[4-Layer Validation]
+        DRAFT[/Draft state<br/>unvalidated/]:::new
+        B3[Human Review]
+    end
+
+    subgraph Reg["Registry"]
+        R[(Versioned manifests)]
+        SE[Schema Evolver<br/>auto-migration]:::new
+        EXP[Code Export<br/>Singer · Airbyte · Python SDK]:::new
+    end
+
+    subgraph Health["Continuous Health Layer"]:::newgroup
+        H1[Re-validate<br/>on cron]:::new
+        H2[Drift detector]:::new
+        H3[Auto-demote<br/>prod → beta]:::new
+    end
+
+    subgraph Runtime["Runtime Service"]
+        SCHED[Scheduler<br/>cron · event-driven]:::new
+        VAULT[Credential Vault<br/>env · secrets-mgr · session]:::new
+        POOL[Worker Pool<br/>backpressure]:::new
+        RT[SyncRuntime]
+        ST[(State<br/>DynamoDB / Postgres)]:::new
+    end
+
+    subgraph Dest["Destinations"]
+        D1[SQLite]
+        D2[Snowflake]:::new
+        D3[BigQuery]:::new
+        D4[S3 / Iceberg]:::new
+    end
+
+    subgraph Tenancy["Multi-tenant"]:::newgroup
+        T1[Per-tenant namespace]:::new
+        T2[RBAC]:::new
+        T3[Audit log]:::new
+    end
+
+    E1 & E2 & E3 --> B0 --> B1 --> B2 --> DRAFT --> B3 --> R
+    R --> EXP
+    R --> SE
+    R --> H1 --> H2 --> H3 --> R
+    SCHED --> POOL --> RT
+    R --> RT
+    VAULT --> RT
+    RT --> ST
+    RT --> D1 & D2 & D3 & D4
+    Tenancy -. policies .-> R
+    Tenancy -. policies .-> RT
+
+    classDef new fill:#fff4d6,stroke:#d4a017,stroke-width:1px,color:#5a4400
+    classDef newgroup fill:#fffaf0,stroke:#d4a017,stroke-dasharray: 4 3
+```
+
+Yellow nodes/groups are the additions over the current build. Crucially, **none of them require touching per-connector code** — they all sit at the platform layer and apply uniformly to every connector in the registry. That is the payoff of the manifest-as-contract design.
 
 ---
 
