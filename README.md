@@ -137,67 +137,82 @@ flowchart LR
     subgraph Entry["Entry"]
         E1[Docs URL]
         E2[NL chat]
-        E3[Code import<br/>existing Singer/Airbyte]
+        E3[Code import - Singer/Airbyte]
     end
 
     subgraph Build["Build Pipeline"]
         B0[DocumentIngester]
         B1[AI Manifest Fill]
         B2[4-Layer Validation]
-        DRAFT[/Draft state<br/>unvalidated/]:::new
+        DRAFT[Draft state - unvalidated]
         B3[Human Review]
     end
 
     subgraph Reg["Registry"]
         R[(Versioned manifests)]
-        SE[Schema Evolver<br/>auto-migration]:::new
-        EXP[Code Export<br/>Singer · Airbyte · Python SDK]:::new
+        SE[Schema Evolver - auto-migration]
+        EXP[Code Export - Singer / Airbyte / SDK]
     end
 
-    subgraph Health["Continuous Health Layer"]:::newgroup
-        H1[Re-validate<br/>on cron]:::new
-        H2[Drift detector]:::new
-        H3[Auto-demote<br/>prod → beta]:::new
+    subgraph Health["Continuous Health Layer"]
+        H1[Re-validate on cron]
+        H2[Drift detector]
+        H3[Auto-demote prod to beta]
     end
 
     subgraph Runtime["Runtime Service"]
-        SCHED[Scheduler<br/>cron · event-driven]:::new
-        VAULT[Credential Vault<br/>env · secrets-mgr · session]:::new
-        POOL[Worker Pool<br/>backpressure]:::new
+        SCHED[Scheduler - cron / event-driven]
+        VAULT[Credential Vault - env / secrets-mgr / session]
+        POOL[Worker Pool - backpressure]
         RT[SyncRuntime]
-        ST[(State<br/>DynamoDB / Postgres)]:::new
+        ST[(State - DynamoDB / Postgres)]
     end
 
     subgraph Dest["Destinations"]
         D1[SQLite]
-        D2[Snowflake]:::new
-        D3[BigQuery]:::new
-        D4[S3 / Iceberg]:::new
+        D2[Snowflake]
+        D3[BigQuery]
+        D4[S3 / Iceberg]
     end
 
-    subgraph Tenancy["Multi-tenant"]:::newgroup
-        T1[Per-tenant namespace]:::new
-        T2[RBAC]:::new
-        T3[Audit log]:::new
+    subgraph Tenancy["Multi-tenant"]
+        T1[Per-tenant namespace]
+        T2[RBAC]
+        T3[Audit log]
     end
 
-    E1 & E2 & E3 --> B0 --> B1 --> B2 --> DRAFT --> B3 --> R
+    E1 --> B0
+    E2 --> B0
+    E3 --> B0
+    B0 --> B1
+    B1 --> B2
+    B2 --> DRAFT
+    DRAFT --> B3
+    B3 --> R
     R --> EXP
     R --> SE
-    R --> H1 --> H2 --> H3 --> R
-    SCHED --> POOL --> RT
+    R --> H1
+    H1 --> H2
+    H2 --> H3
+    H3 --> R
+    SCHED --> POOL
+    POOL --> RT
     R --> RT
     VAULT --> RT
     RT --> ST
-    RT --> D1 & D2 & D3 & D4
-    Tenancy -. policies .-> R
-    Tenancy -. policies .-> RT
+    RT --> D1
+    RT --> D2
+    RT --> D3
+    RT --> D4
+    T1 -.-> R
+    T2 -.-> RT
+    T3 -.-> RT
 
     classDef new fill:#fff4d6,stroke:#d4a017,stroke-width:1px,color:#5a4400
-    classDef newgroup fill:#fffaf0,stroke:#d4a017,stroke-dasharray: 4 3
+    class E3,DRAFT,SE,EXP,H1,H2,H3,SCHED,VAULT,POOL,ST,D2,D3,D4,T1,T2,T3 new
 ```
 
-Yellow nodes/groups are the additions over the current build. Crucially, **none of them require touching per-connector code** — they all sit at the platform layer and apply uniformly to every connector in the registry. That is the payoff of the manifest-as-contract design.
+Yellow-highlighted nodes are the additions over the current build. Crucially, **none of them require touching per-connector code** — they all sit at the platform layer and apply uniformly to every connector in the registry. That is the payoff of the manifest-as-contract design.
 
 ---
 
